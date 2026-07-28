@@ -23,12 +23,13 @@ The Vercel frontend calls the backend and is not deployed by this repository.
 Cross-repository changes must be reflected in the owning repository's design and development
 records. Terraform documentation does not override a runtime contract by itself.
 
-## Current Factual Snapshot — 2026-07-27
+## Current Factual Snapshot — 2026-07-28
 
 - This Terraform repository was an empty Git repository on branch `vpc` with no commits before the
   control-document initialization.
-- No Terraform configuration, Terraform state, plan, apply, AWS resource, Packer build, or
-  deployment has been created or verified from this repository.
+- Terraform foundation configuration and mock-provider tests now exist locally; no Terraform
+  state, live plan, apply, AWS resource, Packer build, or deployment has been created or verified
+  from this repository.
 - Working local application work is recorded in the GPU repository, but a real Working AMI and AWS
   deployment are not verified.
 - Training local runtime/container/systemd work is recorded in the GPU repository, but a real

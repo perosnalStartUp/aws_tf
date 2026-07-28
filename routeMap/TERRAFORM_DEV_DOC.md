@@ -24,7 +24,7 @@ This is the factual implementation record for the Terraform repository. Planned 
 | P1 roadmap | Implemented and statically reviewed locally | `TERRAFORM_P1_ROADMAP.md` |
 | Detailed P1 task map | Implemented and statically validated locally | `TERRAFORM_P1_TASKS.md` |
 | Detailed P1 PR map | Implemented and statically validated locally | `TERRAFORM_P1_PR_PLAN.md` |
-| Terraform `.tf` configuration | Foundation toolchain implemented locally | `versions.tf`, pinned validation configuration |
+| Terraform `.tf` configuration | Foundation provider inputs implemented and tested locally | provider, typed variables, deterministic locals/checks, mock fixtures |
 | Terraform init | completed against empty directory | Terraform v1.13.3 reported an empty-directory initialization |
 | Terraform validate/plan/apply | not run | no configuration or approved environment inputs |
 | AWS resources | not created or changed | documentation-only task |
@@ -287,6 +287,34 @@ Repository evidence:
 
 - local branch: `codex/foundation-toolchain`;
 - parent baseline commit: `43f1d43`;
+- remote/GitHub PR: not created because no Git remote is configured.
+
+### 2026-07-28 — Implement `foundation-provider-inputs`
+
+Scope:
+
+- added an AWS provider configured only from required region/account inputs, allowed-account
+  validation, and deterministic default tags;
+- added typed foundation variables for naming, tags, CIDRs/AZs, capacity, AMIs, IPv6 intent, and
+  public-IP safety;
+- added deterministic component names, tags, and IPv4 network-range calculations;
+- added actionable checks for CIDR containment/non-overlap and Backend/Training capacity;
+- added mock-provider valid/invalid tests using test-only Account ID `123456789012`;
+- renamed the broad `checks.tf` filename to `foundation_checks.tf`;
+- did not use AWS credentials, run a live plan/apply, or change AWS.
+
+Command evidence:
+
+- initial `terraform test -no-color` exposed the unsupported `cidrcontains` function;
+- replaced that function with deterministic IPv4 integer-range comparisons;
+- final `terraform test -no-color` -> exit `0`, 9 passed, 0 failed;
+- `terraform fmt -check -recursive` -> exit `0`;
+- `git diff --check` -> exit `0`.
+
+Repository evidence:
+
+- local branch: `codex/foundation-provider-inputs`;
+- parent toolchain commit: `c80bf06`;
 - remote/GitHub PR: not created because no Git remote is configured.
 
 ## Evidence Rules
