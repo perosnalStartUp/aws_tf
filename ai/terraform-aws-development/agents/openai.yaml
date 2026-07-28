@@ -1,0 +1,4 @@
+interface:
+  display_name: "Terraform AWS Development"
+  short_description: "Develop and document the personal LoRA AWS platform"
+  default_prompt: "Use $terraform-aws-development to design, implement, validate, and document the next Terraform AWS milestone."
