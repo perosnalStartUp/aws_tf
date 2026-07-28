@@ -12,9 +12,9 @@ task-to-PR mapping are maintained in `TERRAFORM_P1_PR_PLAN.md`.
 | --- | --- | --- |
 | P1-0 Control and design baseline | Completed locally | repository instructions, skill, design, release model, roadmap statically validated |
 | P1-1 State/bootstrap decisions | Code/contract implemented locally; deployment values blocked | reviewed backend/bootstrap configuration and recovery/access record |
-| P1-2 Provider, naming, and network | VPC/egress implemented locally; DNS and real allocation blocked | validated VPC/subnet/route/endpoints design |
-| P1-3 KMS, S3, SQS | Planned | encrypted data/messaging resources and scoped policies validate |
-| P1-4 IAM and security groups | Planned | deploy/build/release/runtime boundaries and SG graph validate |
+| P1-2 Provider, naming, and network | Implemented locally; real allocation/name pending | validated VPC/subnet/route/endpoints design |
+| P1-3 KMS, S3, SQS | Product KMS/S3 implemented locally; SQS pending | encrypted data/messaging resources and scoped policies validate |
+| P1-4 IAM and security groups | SG graph implemented locally; IAM pending | deploy/build/release/runtime boundaries and SG graph validate |
 | P1-5 RDS, Backend ASG, and ALB | Blocked on inputs/contracts | Backend infrastructure validates with migration/release boundary |
 | P1-6 Working V0 single instance | Blocked on AMI/runtime inputs | private single EC2 and private DNS validate |
 | P1-7 Training ASG/lifecycle/scaling | Blocked on runtime contract | ASG/SQS scaling/lifecycle design validates without unsafe refresh |

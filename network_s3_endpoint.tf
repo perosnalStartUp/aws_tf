@@ -1,9 +1,4 @@
 locals {
-  s3_gateway_endpoint_object_arns = [
-    for bucket_arn in sort(tolist(var.s3_gateway_endpoint_bucket_arns)) :
-    "${bucket_arn}/*"
-  ]
-
   s3_gateway_endpoint_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -17,10 +12,10 @@ locals {
         "s3:ListBucket",
         "s3:PutObject",
       ]
-      Resource = concat(
-        sort(tolist(var.s3_gateway_endpoint_bucket_arns)),
-        local.s3_gateway_endpoint_object_arns,
-      )
+      Resource = [
+        aws_s3_bucket.product.arn,
+        "${aws_s3_bucket.product.arn}/*",
+      ]
     }]
   })
 }

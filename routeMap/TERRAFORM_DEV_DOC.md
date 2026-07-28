@@ -24,9 +24,9 @@ This is the factual implementation record for the Terraform repository. Planned 
 | P1 roadmap | Implemented and statically reviewed locally | `TERRAFORM_P1_ROADMAP.md` |
 | Detailed P1 task map | Implemented and statically validated locally | `TERRAFORM_P1_TASKS.md` |
 | Detailed P1 PR map | Implemented and statically validated locally | `TERRAFORM_P1_PR_PLAN.md` |
-| Terraform `.tf` configuration | Foundation, State bootstrap, and network through S3 egress implemented locally | separate State root; VPC/subnets/routes; single NAT; S3 Gateway Endpoint |
+| Terraform `.tf` configuration | Foundation through product KMS/S3 and SG graph implemented locally | State; network/DNS; SGs; product KMS/S3 |
 | Terraform init | Root and `bootstrap/state` initialized locally with backend disabled | AWS provider `6.47.0` locked separately in both roots |
-| Terraform validate/test | Passed locally | both roots validate; root Mock tests 12/12 and State Mock tests 3/3 |
+| Terraform validate/test | Passed locally | both roots validate; root Mock tests 17/17 and State Mock tests 3/3 |
 | Terraform live plan/apply | not run | no named/approved live environment inputs |
 | AWS resources | not created or changed | all validation was local/mock-only |
 | Packer/AMI build | not run | out of this task's execution scope |
@@ -370,9 +370,10 @@ Scope:
 
 Input/decision boundary:
 
-- Account IDs, State bucket/principal values, CIDRs, AZs, and endpoint bucket ARNs remain
+- Account IDs, State bucket/principal values, CIDRs, and AZs remain
   required deployment inputs with no live defaults;
-- tests use only Account ID `123456789012`, test CIDRs/ARNs, and `mock_provider "aws"`;
+- tests use only Account ID `123456789012`, test CIDRs/cross-root IAM ARNs, and
+  `mock_provider "aws"`;
 - S3 lockfile use and Terraform KMS-key ownership are confirmed; actual key use is granted through
   consumer IAM policies, while real State/network allocations remain owner decisions;
 - IPv6 fails locally until subnet allocation, routing, and security controls are explicitly
@@ -385,9 +386,7 @@ Resource-reference rule:
 - Mock tests must not feed fake ARN/ID values back into variables when a Terraform resource address
   exists;
 - external artifacts and separate-root resources may remain inputs;
-- `s3_gateway_endpoint_bucket_arns` is a temporary cross-PR boundary because the product bucket
-  does not exist yet; `data-kms-s3` must replace it with the created
-  `aws_s3_bucket.<product>.arn` reference.
+- the PR4–6 S3 Endpoint bucket-ARN input was temporary until the product bucket existed.
 
 Command evidence:
 
@@ -406,6 +405,57 @@ Execution boundary:
 
 - live `terraform plan` / `terraform apply`: not run;
 - backend migration, State lock operation, AWS credentials/API: not used;
+- AWS resources and real Terraform State: not created.
+
+### 2026-07-28 — Implement `network-private-dns`, `security-groups`, and `data-kms-s3`
+
+Scope:
+
+- preserved the user-selected `pr07_9` branch and made no branch, staging, commit, push, or PR
+  operation;
+- added a VPC-associated private Route53 zone and semantic network/SG outputs;
+- added distinct ALB, Backend, Working, Training, database, and future-interface-endpoint security
+  groups using standalone SG-reference rules;
+- kept Training ingress empty and exposed public ingress only on ALB ports `80` and `443`;
+- added a Terraform-managed rotating product KMS key and a versioned, private, KMS-encrypted
+  product S3 bucket with TLS-only policy;
+- generated Backend/Working/Training IAM policy JSON from explicit read/write prefix inputs;
+- removed the temporary Endpoint bucket-ARN input; the Endpoint policy now directly references
+  `aws_s3_bucket.product.arn`, and S3 encryption references `aws_kms_key.product.arn`;
+- added no S3 lifecycle rules because retention decisions remain unresolved;
+- did not use AWS credentials, run a live plan/apply, create Terraform State, or change AWS.
+
+Input/decision boundary:
+
+- real private-zone name, service/database ports, product bucket name, component prefixes, and KMS
+  deletion window remain required deployment inputs with no live defaults;
+- product KMS creation/ownership is Terraform-managed; actual use belongs to consumer IAM roles;
+- whether Training SQS reuses the product key or gets a separate key remains undecided;
+- paid Interface Endpoints remain deferred, so SQS, SSM, Logs, Secrets Manager, and public Backend
+  callback paths use TCP `443` through the single NAT.
+
+Security-scan exception:
+
+- Trivy `AVD-AWS-0104` is suppressed only for the Backend, Working, and Training TCP `443` egress
+  rules required by the confirmed single-NAT/no-interface-endpoint P1 design;
+- the exception permits no other port or protocol;
+- it must be removed when approved Interface Endpoints replace the applicable public AWS API
+  paths.
+
+Command evidence:
+
+- root `terraform validate -no-color` -> exit `0`;
+- root `terraform test -no-color` -> exit `0`, 17 passed, 0 failed;
+- `tflint --recursive --format compact` -> exit `0`, no issues;
+- initial Trivy scan reported three `AWS-0104` findings for the required TCP `443` NAT paths;
+- final `trivy config --config trivy.yaml .` -> exit `0`, zero unsuppressed HIGH/CRITICAL
+  misconfigurations and logs exactly three named ignored findings;
+- `terraform fmt -check -recursive` and `git diff --check` -> exit `0`.
+
+Execution boundary:
+
+- live `terraform plan` / `terraform apply`: not run;
+- AWS credentials/API: not used;
 - AWS resources and real Terraform State: not created.
 
 ## Evidence Rules

@@ -38,9 +38,27 @@ variables {
   working_ami_id  = "ami-0123456789abcdef1"
   training_ami_id = "ami-0123456789abcdef2"
 
-  s3_gateway_endpoint_bucket_arns = [
-    "arn:aws:s3:::personal-lora-test-data",
-  ]
+  private_zone_name        = "test.internal"
+  backend_application_port = 8080
+  working_service_port     = 8188
+  database_port            = 5432
+
+  product_bucket_name                  = "personal-lora-test-data"
+  product_kms_key_deletion_window_days = 30
+  product_s3_component_access = {
+    backend = {
+      read_prefixes  = ["datasets", "adapters"]
+      write_prefixes = ["jobs"]
+    }
+    working = {
+      read_prefixes  = ["adapters"]
+      write_prefixes = []
+    }
+    training = {
+      read_prefixes  = ["datasets"]
+      write_prefixes = ["adapters", "checkpoints", "logs"]
+    }
+  }
 }
 
 run "accepts_valid_foundation_inputs" {

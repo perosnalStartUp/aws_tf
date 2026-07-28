@@ -250,9 +250,11 @@ be reconciled with the worker's `checkpoints/{jobId}/worker_state.json`.
 
 ## 7. KMS and Secrets
 
-Use separate keys where separation improves blast radius and operations, while avoiding needless
-key sprawl. The initial key model is `[DECISION REQUIRED]`, but product S3 and Training SQS must be
-compatible with the Training runtime's explicit `aws:kms` writes.
+Terraform creates and owns a rotating per-environment product-data KMS key. Product S3 references
+it directly through `aws_kms_key.product.arn`. The key policy enables account IAM authorization;
+Backend, Working, and Training receive actual use only through their scoped IAM role policies.
+Whether Training SQS reuses this product key or receives a separate queue key remains
+`[DECISION REQUIRED]`.
 
 Secret values must not enter Terraform state. Terraform may provision policies and accept an
 existing secret ARN/identifier. Required runtime secrets include at least RDS credentials and the
@@ -391,6 +393,19 @@ internet-facing ALB spanning two public subnets. Initial `desired = 1`.
 Confirmed: Training remains private and calls the public Backend ALB URL through the single NAT
 Gateway. The public callback endpoint uses HTTPS and application-level callback authentication;
 Training has no inbound listener.
+
+### 2026-07-28 — P1 HTTPS Egress Exception
+
+Confirmed:
+
+- Backend, Working, and Training security groups have no unrestricted all-protocol egress.
+- Their temporary public destination scope is limited to TCP `443` because SQS, SSM, logs,
+  Secrets Manager, and the public Backend callback use the single NAT in P1.
+- S3 is routed through the Gateway Endpoint, but an SG cannot express that route selection or
+  constrain all other AWS public-service IP ranges to stable CIDRs.
+- Trivy `AVD-AWS-0104` is suppressed only on these three named HTTPS rules with inline reasons.
+- A future approved Interface Endpoint PR must replace the applicable public HTTPS rules with
+  endpoint-SG references before removing the suppressions.
 
 ### 2026-07-28 — State bootstrap root and redirect-only HTTP
 

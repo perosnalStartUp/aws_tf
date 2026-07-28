@@ -122,21 +122,21 @@ flowchart LR
 | NET-008 | Implement private application route tables for both AZs with `0.0.0.0/0 -> single NAT`. | NET-004, NET-007 | **Completed locally 2026-07-28**: two application route tables/default routes use the single NAT resource. |
 | NET-009 | Implement DB route table associations with local-only routing unless a later RDS requirement is approved. | NET-005 | **Completed locally 2026-07-28**: two DB route tables/associations contain no internet default route. |
 | NET-010 | Implement the S3 Gateway Endpoint and associate it with both private application route tables. | NET-008 | **Completed locally 2026-07-28**: Gateway Endpoint attaches both application route tables and policy requires approved bucket ARNs. |
-| NET-011 | Implement Route53 private hosted zone association for the VPC. | NET-002, DEC-007 | Zone name is explicit; VPC DNS resolution is enabled. |
-| NET-012 | Add network outputs: VPC ID, subnet IDs by class/AZ, route table IDs, NAT EIP, and private zone ID. | NET-003 through NET-011 | Outputs contain identifiers only and no sensitive values. |
+| NET-011 | Implement Route53 private hosted zone association for the VPC. | NET-002, DEC-007 | **Completed locally 2026-07-28**: private zone uses a required name and direct `aws_vpc.main.id` association; real name remains required. |
+| NET-012 | Add network outputs: VPC ID, subnet IDs by class/AZ, route table IDs, NAT EIP, and private zone ID. | NET-003 through NET-011 | **Completed locally 2026-07-28**: semantic outputs expose only resource-derived identifiers/EIP and no secrets. |
 | NET-013 | Add VPC Flow Logs destination/role after retention and destination are decided. | DEC-009, NET-002 | Flow logs are enabled without exposing application secrets. |
 
 ## 8. Security Groups and IAM Foundation
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| SG-001 | Create separate ALB, Backend, Working, Training, RDS, and endpoint security groups with no implicit default-SG use. | NET-002 | Each resource class has an explicit SG and description. |
-| SG-002 | Allow public ALB ingress on HTTPS 443 and HTTP 80 for redirect-only traffic. | DEC-005, SG-001 | Port 80 has only an HTTP-to-HTTPS redirect listener; no application EC2 receives public ingress. |
-| SG-003 | Allow ALB SG to Backend SG on application and health-check ports only. | DEC-005, SG-001 | Backend ingress source is the ALB SG, not a broad CIDR. |
-| SG-004 | Allow Backend SG to Working SG on the confirmed private inference port only. | DEC-007, SG-001 | Working has no other application ingress. |
-| SG-005 | Keep Training application ingress empty; define only required HTTPS/DNS egress. | SG-001 | No SSH or service listener is reachable from ALB/internet. |
-| SG-006 | Allow Backend SG to RDS SG on the selected PostgreSQL engine port only. | DEC-010, SG-001 | Working/Training have no RDS rule. |
-| SG-007 | Encode runtime HTTPS egress through NAT/S3 endpoint without pretending the public callback preserves Training SG identity. | SG-001, NET-010 | Public ALB callback relies on TLS/application auth; SG comments explain NAT source translation. |
+| SG-001 | Create separate ALB, Backend, Working, Training, RDS, and endpoint security groups with no implicit default-SG use. | NET-002 | **Completed locally 2026-07-28**: six explicit groups validate with empty inline ingress/egress and standalone rules. |
+| SG-002 | Allow public ALB ingress on HTTPS 443 and HTTP 80 for redirect-only traffic. | DEC-005, SG-001 | **Completed locally 2026-07-28**: only ALB rules expose `80`/`443`; port `80` remains reserved for the later redirect listener. |
+| SG-003 | Allow ALB SG to Backend SG on application and health-check ports only. | DEC-005, SG-001 | **Completed locally 2026-07-28**: Backend ingress/ALB egress use direct SG references and required port input. |
+| SG-004 | Allow Backend SG to Working SG on the confirmed private inference port only. | DEC-007, SG-001 | **Completed locally 2026-07-28**: bidirectional rule pair uses SG references and required Working port input. |
+| SG-005 | Keep Training application ingress empty; define only required HTTPS/DNS egress. | SG-001 | **Completed locally 2026-07-28**: Training has no ingress rule and only TCP `443` egress. |
+| SG-006 | Allow Backend SG to RDS SG on the selected PostgreSQL engine port only. | DEC-010, SG-001 | **Completed locally 2026-07-28**: Backend/database rules use SG references and required DB port input; Working/Training have no DB path. |
+| SG-007 | Encode runtime HTTPS egress through NAT/S3 endpoint without pretending the public callback preserves Training SG identity. | SG-001, NET-010 | **Completed locally 2026-07-28**: TCP `443` NAT egress has documented Trivy exception/exit condition; no callback source-SG claim. |
 | IAM-001 | Implement the Terraform deploy policy boundary for one environment, including narrowly scoped `iam:PassRole`. | DEC-012, FND-005 | Policy review identifies unavoidable wildcard `Describe*` actions separately. |
 | IAM-002 | Implement Backend runtime role/profile for S3 prefixes, SQS send, approved DB secret, KMS, logs/metrics, and SSM. | DATA-001 through DATA-007 | No Training lifecycle, Working secret, or workflow mutation permissions. |
 | IAM-003 | Implement Working runtime role/profile for approved S3/KMS prefixes, optional auth secret, logs/metrics, and SSM. | DEC-007, DATA-001 through DATA-004 | No SQS, RDS, or LT/ASG mutation permissions. |
@@ -149,10 +149,10 @@ flowchart LR
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| DATA-001 | Decide and implement the KMS key/alias model for product S3, Training SQS, and other approved encrypted resources. | DEC-009, FND-005 | Key policies avoid account-wide runtime administration and support required service grants. |
-| DATA-002 | Implement product S3 bucket with versioning, KMS default encryption, ownership controls, and public-access block. | DATA-001 | Bucket validates with no public ACL/policy path; S3 Gateway Endpoint policy replaces its temporary ARN input with direct `aws_s3_bucket.<product>.arn` reference. |
-| DATA-003 | Implement TLS-only bucket policy and component/prefix policy documents. | DATA-002 | Insecure transport is denied; Backend/Working/Training prefixes are explicit. |
-| DATA-004 | Implement only approved lifecycle/retention rules for datasets, logs, checkpoints, and adapters. | DEC-009, DATA-002 | Durable adapters/datasets are not deleted by an assumed default. |
+| DATA-001 | Decide and implement the KMS key/alias model for product S3, Training SQS, and other approved encrypted resources. | DEC-009, FND-005 | **Partially completed locally 2026-07-28**: Terraform-managed rotating product key delegates use to consumer IAM; SQS key reuse/split remains a later decision. |
+| DATA-002 | Implement product S3 bucket with versioning, KMS default encryption, ownership controls, and public-access block. | DATA-001 | **Completed locally 2026-07-28**: bucket directly references `aws_kms_key.product.arn`; Endpoint policy directly references `aws_s3_bucket.product.arn`. |
+| DATA-003 | Implement TLS-only bucket policy and component/prefix policy documents. | DATA-002 | **Completed locally 2026-07-28**: TLS-only policy and explicit Backend/Working/Training read/write-prefix IAM JSON validate. |
+| DATA-004 | Implement only approved lifecycle/retention rules for datasets, logs, checkpoints, and adapters. | DEC-009, DATA-002 | **Completed locally 2026-07-28 with no lifecycle rules**: no retention value was invented; durable data is not expired. |
 | DATA-005 | Implement KMS-encrypted Training queue and DLQ. | DEC-008, DEC-009, DATA-001 | Queue URLs/ARNs output; no secret; DLQ exists. |
 | DATA-006 | Implement redrive, visibility, retention, long polling, receive count, and queue policy from the runtime contract. | DATA-005 | Timing values are validated against max job/renewal behavior. |
 | DATA-007 | Add SQS/DLQ alarms for visible age/count and dead-letter arrival. | DATA-005, OBS-001 | Alarm thresholds/destinations are owner-approved. |

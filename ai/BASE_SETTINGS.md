@@ -78,6 +78,11 @@ Terraform owns resource structure:
 - the single Working V0 EC2 instance;
 - monitoring and scaling policy structure.
 
+Terraform creates and owns customer-managed KMS keys for Terraform-managed encrypted resources.
+Key policies enable account IAM authorization; the IAM policy of each consuming program/role
+grants actual use of the specific key ARN. Resource configuration references created keys directly
+through addresses such as `aws_kms_key.product.arn`.
+
 The AMI release workflow owns a deliberately narrow mutable surface for Backend and Training:
 
 - create an AMI-only Launch Template version cloned from the current `$Default`;

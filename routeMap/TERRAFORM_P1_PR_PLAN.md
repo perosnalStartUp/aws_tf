@@ -71,9 +71,9 @@ resolved, but it must not merge production-shaped placeholders as if they were a
 | 4 | `state-bootstrap` | State/bootstrap code and backend contract | `STATE-001` through `STATE-004` | DP-01, DP-03; `foundation-toolchain`, `foundation-validation` | implemented locally; deployment values pending |
 | 5 | `network-vpc-subnets` | VPC, six subnets, IGW, public/DB routing | `NET-001` through `NET-006`, `NET-009` | DP-02; `foundation-provider-inputs`, `foundation-validation` | implemented locally with Mock inputs; real allocation pending |
 | 6 | `network-egress-s3-endpoint` | Single NAT and S3 Gateway Endpoint | `NET-007`, `NET-008`, `NET-010` | `network-vpc-subnets` | implemented locally |
-| 7 | `network-private-dns` | Private DNS and network outputs | `NET-011`, `NET-012` | DP-05; `network-vpc-subnets`, `network-egress-s3-endpoint` | blocked on decisions |
-| 8 | `security-groups` | Security-group graph | `SG-001` through `SG-007` | DP-04, DP-05, DP-08; `network-vpc-subnets` | blocked on decisions |
-| 9 | `data-kms-s3` | Product KMS and S3 data boundary | `DATA-001` through `DATA-004` | DP-07; `foundation-provider-inputs`, `foundation-validation` | blocked on decisions |
+| 7 | `network-private-dns` | Private DNS and network outputs | `NET-011`, `NET-012` | DP-05; `network-vpc-subnets`, `network-egress-s3-endpoint` | implemented locally; real zone pending |
+| 8 | `security-groups` | Security-group graph | `SG-001` through `SG-007` | DP-04, DP-05, DP-08; `network-vpc-subnets` | implemented locally; real ports pending |
+| 9 | `data-kms-s3` | Product KMS and S3 data boundary | `DATA-001` through `DATA-004` | DP-07; `foundation-provider-inputs`, `foundation-validation` | implemented locally; names/prefixes pending |
 | 10 | `messaging-training-sqs` | Training SQS and DLQ | `DATA-005`, `DATA-006` | DP-06, DP-07; `data-kms-s3` | blocked on decisions |
 | 11 | `iam-deploy-oidc` | Terraform deploy IAM and GitHub OIDC trust | `IAM-001`, `IAM-005` | DP-09; `foundation-provider-inputs`, `foundation-validation` | blocked on decisions |
 | 12 | `iam-runtime-roles` | Backend, Working, Training runtime IAM | `IAM-002` through `IAM-004` | DP-05, DP-06; `data-kms-s3`, `messaging-training-sqs` | blocked on decisions |
@@ -206,8 +206,7 @@ Outcome:
 
 - approved KMS key/alias model;
 - versioned, private, KMS-encrypted product bucket;
-- replace the temporary S3 Gateway Endpoint bucket-ARN input with a direct
-  `aws_s3_bucket.<product>.arn` resource reference;
+- S3 Gateway Endpoint policy directly references `aws_s3_bucket.product.arn`;
 - TLS-only and component/prefix policy documents;
 - only owner-approved lifecycle rules.
 

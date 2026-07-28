@@ -35,9 +35,27 @@ variables {
   working_ami_id  = "ami-0123456789abcdef1"
   training_ami_id = "ami-0123456789abcdef2"
 
-  s3_gateway_endpoint_bucket_arns = [
-    "arn:aws:s3:::personal-lora-test-data",
-  ]
+  private_zone_name        = "test.internal"
+  backend_application_port = 8080
+  working_service_port     = 8188
+  database_port            = 5432
+
+  product_bucket_name                  = "personal-lora-test-data"
+  product_kms_key_deletion_window_days = 30
+  product_s3_component_access = {
+    backend = {
+      read_prefixes  = ["datasets", "adapters"]
+      write_prefixes = ["jobs"]
+    }
+    working = {
+      read_prefixes  = ["adapters"]
+      write_prefixes = []
+    }
+    training = {
+      read_prefixes  = ["datasets"]
+      write_prefixes = ["adapters", "checkpoints", "logs"]
+    }
+  }
 }
 
 run "plans_two_az_network_and_single_nat" {
@@ -89,6 +107,11 @@ run "plans_two_az_network_and_single_nat" {
     condition     = aws_vpc_endpoint.s3.vpc_endpoint_type == "Gateway"
     error_message = "S3 must use a free Gateway Endpoint."
   }
+
+  assert {
+    condition     = aws_route53_zone.private.name == "test.internal"
+    error_message = "The private zone must use the explicit environment input."
+  }
 }
 
 run "rejects_ipv6_without_complete_design" {
@@ -103,14 +126,14 @@ run "rejects_ipv6_without_complete_design" {
   ]
 }
 
-run "rejects_empty_s3_endpoint_scope" {
+run "rejects_invalid_private_zone_name" {
   command = plan
 
   variables {
-    s3_gateway_endpoint_bucket_arns = []
+    private_zone_name = "INVALID_ZONE"
   }
 
   expect_failures = [
-    var.s3_gateway_endpoint_bucket_arns,
+    var.private_zone_name,
   ]
 }
