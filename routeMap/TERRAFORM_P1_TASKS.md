@@ -101,10 +101,10 @@ flowchart LR
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| STATE-001 | Write the state bootstrap decision: bucket name, region, key layout, encryption key, locking, versioning, recovery, break-glass owner, and environment separation. | DEC-001, DEC-004 | Reviewed decision contains no secret values and defines recovery responsibility. |
+| STATE-001 | Write the state bootstrap decision: bucket name, region, key layout, encryption key, locking, versioning, recovery, break-glass owner, and environment separation. | DEC-001, DEC-004 | **Partially completed locally 2026-07-28**: S3 lockfile, Terraform-owned KMS key, IAM-managed use, versioning, recovery boundary and key layout contract are documented; real bucket/region/principals remain required. |
 | STATE-002 | Use a separate Terraform root at `bootstrap/state`; prevent dependency on the backend it creates. | STATE-001 | **Decision confirmed 2026-07-28**: independently initialized root in this repository; implementation and teardown/recovery controls remain `state-bootstrap` work. |
-| STATE-003 | Implement the bootstrap configuration with S3 encryption, versioning, public-access block, TLS-only policy, and least-privilege access. | STATE-002 | Local init/validate passes; no live bucket is claimed. |
-| STATE-004 | Create the environment backend configuration and document partial backend arguments that must be supplied outside Git. | STATE-003 | No credential or secret is embedded; key naming separates environments. |
+| STATE-003 | Implement the bootstrap configuration with S3 encryption, versioning, public-access block, TLS-only policy, and least-privilege access. | STATE-002 | **Completed locally 2026-07-28**: independent init/validate and Mock tests passed; Terraform-managed KMS key rotation and IAM delegation are enforced; no live bucket/key exists. |
+| STATE-004 | Create the environment backend configuration and document partial backend arguments that must be supplied outside Git. | STATE-003 | **Completed locally 2026-07-28**: partial S3 backend uses `use_lockfile = true`; README keeps bucket/key/region/account inputs outside Git. |
 | STATE-005 | Provision/bootstrap the state resources in the named account. | STATE-003 | **Requires explicit authorization**; resource IDs and command evidence recorded. |
 | STATE-006 | Reinitialize/migrate the root state to the remote backend and verify locking/version recovery. | STATE-004, STATE-005 | **Requires explicit authorization**; migration and lock test evidence recorded. |
 
@@ -112,16 +112,16 @@ flowchart LR
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| NET-001 | Record the selected VPC/AZ/subnet CIDR map and prove that all six subnet CIDRs are contained and non-overlapping. | DEC-003, FND-004 | CIDR table and Terraform validations agree. |
-| NET-002 | Implement VPC with DNS support/hostnames enabled and required tags. | NET-001 | VPC validates; no default resource is treated as an implicit dependency. |
-| NET-003 | Implement two public subnets, one in each selected AZ, with public-IP auto-assignment disabled by default. | NET-002 | Both subnets are distinct, tagged, and intended only for ALB/NAT. |
-| NET-004 | Implement two private application subnets for Backend/Working/Training. | NET-002 | No public-IP auto-assignment; both ASGs can consume the subnet list. |
-| NET-005 | Implement two private DB subnets reserved for RDS. | NET-002 | RDS subnet group prerequisites are met; no internet default route. |
-| NET-006 | Implement and attach the Internet Gateway plus public route table and `0.0.0.0/0 -> IGW`. | NET-003 | Both public subnets are associated with the intended route table. |
-| NET-007 | Allocate one EIP and implement the single public NAT Gateway in AZ-A. | NET-006 | NAT exists only in the selected AZ-A public subnet; low-cost failure domain is documented. |
-| NET-008 | Implement private application route tables for both AZs with `0.0.0.0/0 -> single NAT`. | NET-004, NET-007 | Both application subnets use the NAT; cross-AZ route is visible in review. |
-| NET-009 | Implement DB route table associations with local-only routing unless a later RDS requirement is approved. | NET-005 | DB subnets have no IGW/NAT default route. |
-| NET-010 | Implement the S3 Gateway Endpoint and associate it with both private application route tables. | NET-008 | S3 prefix-list routes avoid NAT; endpoint policy scope is reviewed. |
+| NET-001 | Record the selected VPC/AZ/subnet CIDR map and prove that all six subnet CIDRs are contained and non-overlapping. | DEC-003, FND-004 | **Validation completed locally 2026-07-28** with contained/non-overlapping Mock CIDRs; real CIDR/AZ allocation remains `[DECISION REQUIRED]`. |
+| NET-002 | Implement VPC with DNS support/hostnames enabled and required tags. | NET-001 | **Completed locally 2026-07-28**: VPC Mock plan enables DNS support/hostnames and uses explicit tags. |
+| NET-003 | Implement two public subnets, one in each selected AZ, with public-IP auto-assignment disabled by default. | NET-002 | **Completed locally 2026-07-28**: two Mock-planned public subnets have public-IP auto-assignment disabled. |
+| NET-004 | Implement two private application subnets for Backend/Working/Training. | NET-002 | **Completed locally 2026-07-28**: two private application subnet resources validate. |
+| NET-005 | Implement two private DB subnets reserved for RDS. | NET-002 | **Completed locally 2026-07-28**: two private DB subnet resources validate. |
+| NET-006 | Implement and attach the Internet Gateway plus public route table and `0.0.0.0/0 -> IGW`. | NET-003 | **Completed locally 2026-07-28**: IGW, public route table/default route and two associations validate. |
+| NET-007 | Allocate one EIP and implement the single public NAT Gateway in AZ-A. | NET-006 | **Completed locally 2026-07-28**: one VPC EIP/NAT resource targets `public_a`; no live allocation exists. |
+| NET-008 | Implement private application route tables for both AZs with `0.0.0.0/0 -> single NAT`. | NET-004, NET-007 | **Completed locally 2026-07-28**: two application route tables/default routes use the single NAT resource. |
+| NET-009 | Implement DB route table associations with local-only routing unless a later RDS requirement is approved. | NET-005 | **Completed locally 2026-07-28**: two DB route tables/associations contain no internet default route. |
+| NET-010 | Implement the S3 Gateway Endpoint and associate it with both private application route tables. | NET-008 | **Completed locally 2026-07-28**: Gateway Endpoint attaches both application route tables and policy requires approved bucket ARNs. |
 | NET-011 | Implement Route53 private hosted zone association for the VPC. | NET-002, DEC-007 | Zone name is explicit; VPC DNS resolution is enabled. |
 | NET-012 | Add network outputs: VPC ID, subnet IDs by class/AZ, route table IDs, NAT EIP, and private zone ID. | NET-003 through NET-011 | Outputs contain identifiers only and no sensitive values. |
 | NET-013 | Add VPC Flow Logs destination/role after retention and destination are decided. | DEC-009, NET-002 | Flow logs are enabled without exposing application secrets. |
@@ -150,7 +150,7 @@ flowchart LR
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
 | DATA-001 | Decide and implement the KMS key/alias model for product S3, Training SQS, and other approved encrypted resources. | DEC-009, FND-005 | Key policies avoid account-wide runtime administration and support required service grants. |
-| DATA-002 | Implement product S3 bucket with versioning, KMS default encryption, ownership controls, and public-access block. | DATA-001 | Bucket validates with no public ACL/policy path. |
+| DATA-002 | Implement product S3 bucket with versioning, KMS default encryption, ownership controls, and public-access block. | DATA-001 | Bucket validates with no public ACL/policy path; S3 Gateway Endpoint policy replaces its temporary ARN input with direct `aws_s3_bucket.<product>.arn` reference. |
 | DATA-003 | Implement TLS-only bucket policy and component/prefix policy documents. | DATA-002 | Insecure transport is denied; Backend/Working/Training prefixes are explicit. |
 | DATA-004 | Implement only approved lifecycle/retention rules for datasets, logs, checkpoints, and adapters. | DEC-009, DATA-002 | Durable adapters/datasets are not deleted by an assumed default. |
 | DATA-005 | Implement KMS-encrypted Training queue and DLQ. | DEC-008, DEC-009, DATA-001 | Queue URLs/ARNs output; no secret; DLQ exists. |

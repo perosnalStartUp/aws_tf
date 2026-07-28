@@ -36,6 +36,10 @@ Every implementation PR must:
 8. report live plan/apply/AWS checks as `not run` unless explicitly authorized and executed;
 9. avoid bundling a live state/AWS mutation with an otherwise reviewable code change;
 10. preserve unrelated work in the uncommitted repository.
+11. reference every resource created in the same Terraform root through its resource address
+    (`aws_<type>.<name>.arn`, `.id`, or a module output), never by feeding a handwritten or Mock
+    ARN/ID back through a variable. Inputs are allowed only for external artifacts, separate roots,
+    or resources owned by a later PR; the boundary and replacement PR must be documented.
 
 Planning names are not claims that GitHub PRs exist. Suggested branches use the `codex/` prefix only when a
 branch is actually created.
@@ -64,9 +68,9 @@ resolved, but it must not merge production-shaped placeholders as if they were a
 | 1 | `foundation-toolchain` | Repository hygiene and pinned toolchain | `FND-001`, `FND-002`, `VAL-002` | DP-01; tool choice approved | implemented locally |
 | 2 | `foundation-provider-inputs` | Provider, names, variables, checks, fixtures | `FND-003` through `FND-006`, `VAL-003` | DP-01, DP-02; `foundation-toolchain` | implemented locally |
 | 3 | `foundation-validation` | Provider initialization and repository validation gate | `FND-007`, `FND-008`, `VAL-001` | `foundation-toolchain`, `foundation-provider-inputs`; provider download available | implemented locally |
-| 4 | `state-bootstrap` | State/bootstrap code and backend contract | `STATE-001` through `STATE-004` | DP-01, DP-03; `foundation-toolchain`, `foundation-validation` | blocked on decisions |
-| 5 | `network-vpc-subnets` | VPC, six subnets, IGW, public/DB routing | `NET-001` through `NET-006`, `NET-009` | DP-02; `foundation-provider-inputs`, `foundation-validation` | blocked on decisions |
-| 6 | `network-egress-s3-endpoint` | Single NAT and S3 Gateway Endpoint | `NET-007`, `NET-008`, `NET-010` | `network-vpc-subnets` | planned |
+| 4 | `state-bootstrap` | State/bootstrap code and backend contract | `STATE-001` through `STATE-004` | DP-01, DP-03; `foundation-toolchain`, `foundation-validation` | implemented locally; deployment values pending |
+| 5 | `network-vpc-subnets` | VPC, six subnets, IGW, public/DB routing | `NET-001` through `NET-006`, `NET-009` | DP-02; `foundation-provider-inputs`, `foundation-validation` | implemented locally with Mock inputs; real allocation pending |
+| 6 | `network-egress-s3-endpoint` | Single NAT and S3 Gateway Endpoint | `NET-007`, `NET-008`, `NET-010` | `network-vpc-subnets` | implemented locally |
 | 7 | `network-private-dns` | Private DNS and network outputs | `NET-011`, `NET-012` | DP-05; `network-vpc-subnets`, `network-egress-s3-endpoint` | blocked on decisions |
 | 8 | `security-groups` | Security-group graph | `SG-001` through `SG-007` | DP-04, DP-05, DP-08; `network-vpc-subnets` | blocked on decisions |
 | 9 | `data-kms-s3` | Product KMS and S3 data boundary | `DATA-001` through `DATA-004` | DP-07; `foundation-provider-inputs`, `foundation-validation` | blocked on decisions |
@@ -202,6 +206,8 @@ Outcome:
 
 - approved KMS key/alias model;
 - versioned, private, KMS-encrypted product bucket;
+- replace the temporary S3 Gateway Endpoint bucket-ARN input with a direct
+  `aws_s3_bucket.<product>.arn` resource reference;
 - TLS-only and component/prefix policy documents;
 - only owner-approved lifecycle rules.
 

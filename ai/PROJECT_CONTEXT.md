@@ -27,9 +27,9 @@ records. Terraform documentation does not override a runtime contract by itself.
 
 - This Terraform repository was an empty Git repository on branch `vpc` with no commits before the
   control-document initialization.
-- Terraform foundation configuration and mock-provider tests now exist locally; no Terraform
-  state, live plan, apply, AWS resource, Packer build, or deployment has been created or verified
-  from this repository.
+- Terraform foundation, State-bootstrap, VPC/subnet/routing, single-NAT, and S3 Gateway Endpoint
+  configuration now exist locally with mock-provider tests; no Terraform State, live plan, apply,
+  AWS resource, Packer build, or deployment has been created or verified from this repository.
 - Working local application work is recorded in the GPU repository, but a real Working AMI and AWS
   deployment are not verified.
 - Training local runtime/container/systemd work is recorded in the GPU repository, but a real

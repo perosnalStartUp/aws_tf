@@ -37,6 +37,10 @@ variables {
   backend_ami_id  = "ami-0123456789abcdef0"
   working_ami_id  = "ami-0123456789abcdef1"
   training_ami_id = "ami-0123456789abcdef2"
+
+  s3_gateway_endpoint_bucket_arns = [
+    "arn:aws:s3:::personal-lora-test-data",
+  ]
 }
 
 run "accepts_valid_foundation_inputs" {

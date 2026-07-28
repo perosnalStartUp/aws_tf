@@ -398,6 +398,11 @@ Confirmed:
 
 - State bootstrap uses an independently initialized Terraform root at `bootstrap/state` in this
   repository.
+- Environment roots use native S3 lockfiles (`use_lockfile = true`) without a DynamoDB locking
+  table.
+- Terraform creates and owns the customer-managed State KMS key. The key policy enables account
+  IAM authorization; Terraform bootstrap/deploy IAM policies grant actual use. Runtime program
+  roles do not receive State-key access.
 - The Backend ALB accepts HTTP `80` only to redirect to HTTPS `443`; no plaintext application
   listener is permitted.
 

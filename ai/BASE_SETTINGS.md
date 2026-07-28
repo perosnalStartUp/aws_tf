@@ -52,8 +52,8 @@ design is a new architecture decision, not an implicit extension of V0.
 
 ## State
 
-- Use an encrypted, versioned S3 backend and Terraform state locking supported by the selected
-  Terraform/AWS provider versions.
+- Use an encrypted, versioned S3 backend with Terraform's native S3 lockfile
+  (`use_lockfile = true`); do not add a DynamoDB locking table.
 - Bootstrap resources for state use a separate Terraform root at `bootstrap/state` in this
   repository. That root is a separately reviewed exception because Terraform cannot use a backend
   that does not yet exist.
@@ -62,8 +62,11 @@ design is a new architecture decision, not an implicit extension of V0.
   variables, outputs, locals, user data, or state.
 - Pin Terraform and provider version ranges after the initial compatibility decision.
 
-The bootstrap root location is confirmed. The backend bucket name, key convention, lock mechanism,
-region, recovery owner, and environment access boundaries remain `[DECISION REQUIRED]`.
+The bootstrap root location and S3 lockfile mechanism are confirmed. Terraform creates and owns
+the customer-managed State KMS key. Its key policy enables account IAM authorization; actual use is
+granted through the consuming Terraform bootstrap/deploy IAM policies. The backend bucket name,
+key convention, region, recovery owner, IAM principal details, and environment access boundaries
+remain `[DECISION REQUIRED]`.
 
 ## Infrastructure and Release Ownership
 

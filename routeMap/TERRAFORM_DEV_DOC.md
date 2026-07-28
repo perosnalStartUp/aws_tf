@@ -24,11 +24,11 @@ This is the factual implementation record for the Terraform repository. Planned 
 | P1 roadmap | Implemented and statically reviewed locally | `TERRAFORM_P1_ROADMAP.md` |
 | Detailed P1 task map | Implemented and statically validated locally | `TERRAFORM_P1_TASKS.md` |
 | Detailed P1 PR map | Implemented and statically validated locally | `TERRAFORM_P1_PR_PLAN.md` |
-| Terraform `.tf` configuration | Foundation provider inputs implemented and tested locally | provider, typed variables, deterministic locals/checks, mock fixtures |
-| Terraform init | Foundation provider initialized locally without a backend | AWS provider `6.47.0` locked in `.terraform.lock.hcl` |
-| Terraform validate/test | Passed locally | validate passed; mock-provider tests passed 9/9 |
+| Terraform `.tf` configuration | Foundation, State bootstrap, and network through S3 egress implemented locally | separate State root; VPC/subnets/routes; single NAT; S3 Gateway Endpoint |
+| Terraform init | Root and `bootstrap/state` initialized locally with backend disabled | AWS provider `6.47.0` locked separately in both roots |
+| Terraform validate/test | Passed locally | both roots validate; root Mock tests 12/12 and State Mock tests 3/3 |
 | Terraform live plan/apply | not run | no named/approved live environment inputs |
-| AWS resources | not created or changed | all foundation validation was local/mock-only |
+| AWS resources | not created or changed | all validation was local/mock-only |
 | Packer/AMI build | not run | out of this task's execution scope |
 | GitHub workflow | not created or run | design only |
 
@@ -351,6 +351,62 @@ Repository evidence:
 - local branch: `codex/foundation-validation`;
 - parent provider-input commit: `cc4e9ff`;
 - remote/GitHub PR: not created because no Git remote is configured.
+
+### 2026-07-28 — Implement `state-bootstrap`, `network-vpc-subnets`, and `network-egress-s3-endpoint`
+
+Scope:
+
+- preserved the user-selected `pr04` branch and made no branch, staging, commit, push, or PR
+  operation;
+- added an independent `bootstrap/state` root with a versioned/private State bucket,
+  Terraform-managed rotating KMS key, TLS-only/least-privilege bucket policy, and
+  `prevent_destroy`;
+- added a partial root S3 backend contract using native S3 lockfiles without DynamoDB;
+- added one VPC, six two-AZ subnets, IGW/public routing, and local-only DB route tables;
+- added one AZ-A EIP/NAT, two private-application default routes, and a scoped S3 Gateway Endpoint;
+- added only semantic Terraform filenames based on State, VPC, subnet/routing, egress, and endpoint
+  ownership;
+- did not use AWS credentials, run a live plan/apply, create Terraform State, or change AWS.
+
+Input/decision boundary:
+
+- Account IDs, State bucket/principal values, CIDRs, AZs, and endpoint bucket ARNs remain
+  required deployment inputs with no live defaults;
+- tests use only Account ID `123456789012`, test CIDRs/ARNs, and `mock_provider "aws"`;
+- S3 lockfile use and Terraform KMS-key ownership are confirmed; actual key use is granted through
+  consumer IAM policies, while real State/network allocations remain owner decisions;
+- IPv6 fails locally until subnet allocation, routing, and security controls are explicitly
+  designed.
+
+Resource-reference rule:
+
+- resources created in the same Terraform root are connected through direct resource addresses
+  such as `aws_kms_key.state.arn`, `aws_s3_bucket.state.arn`, and `aws_vpc.main.id`;
+- Mock tests must not feed fake ARN/ID values back into variables when a Terraform resource address
+  exists;
+- external artifacts and separate-root resources may remain inputs;
+- `s3_gateway_endpoint_bucket_arns` is a temporary cross-PR boundary because the product bucket
+  does not exist yet; `data-kms-s3` must replace it with the created
+  `aws_s3_bucket.<product>.arn` reference.
+
+Command evidence:
+
+- root `terraform init -backend=false -reconfigure` -> exit `0`;
+- `bootstrap/state` `terraform init -backend=false` -> exit `0`, provider `6.47.0` locked;
+- both roots `terraform validate -no-color` -> exit `0`;
+- root `terraform test -no-color` -> exit `0`, 12 passed, 0 failed;
+- State `terraform test -no-color` -> exit `0`, 3 passed, 0 failed;
+- `tflint --recursive --format compact` -> exit `0`, no issues;
+- initial Trivy scan found HIGH `AWS-0132` for SSE-S3; Terraform now creates the customer-managed
+  KMS key and the bucket reads its ARN from `aws_kms_key.state.arn`;
+- final `trivy config --config trivy.yaml .` -> exit `0`, zero HIGH/CRITICAL
+  misconfigurations.
+
+Execution boundary:
+
+- live `terraform plan` / `terraform apply`: not run;
+- backend migration, State lock operation, AWS credentials/API: not used;
+- AWS resources and real Terraform State: not created.
 
 ## Evidence Rules
 
