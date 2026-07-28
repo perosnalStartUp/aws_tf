@@ -1,0 +1,37 @@
+# Terraform working directories and local metadata
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.plan
+crash.log
+crash.*.log
+
+# Local overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local variable inputs can contain account/environment data or secrets
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+*.tfvars
+*.tfvars.json
+!tests/**/*.tfvars
+!tests/**/*.tfvars.json
+
+# CLI configuration and credentials
+.terraformrc
+terraform.rc
+
+# Tool caches and reports
+.tflint.d/
+.trivy/
+*.sarif
+
+# Keep dependency locks under version control
+!.terraform.lock.hcl
+!**/.terraform.lock.hcl

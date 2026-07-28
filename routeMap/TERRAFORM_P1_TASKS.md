@@ -88,8 +88,8 @@ flowchart LR
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
 | FND-000 | Run Terraform initialization in the empty repository and record the actual result. | none | **Completed locally 2026-07-27**: Terraform v1.13.3 returned `Terraform initialized in an empty directory!`; no configuration/provider/backend was initialized. |
-| FND-001 | Add `.gitignore` entries for `.terraform/`, state/backup files, plan artifacts, crash logs, override files, and local secret tfvars while preserving the provider lock file. | none | Ignore rules reviewed against repository limits. |
-| FND-002 | Create `versions.tf` with an approved Terraform constraint and pinned-compatible AWS provider constraint. | DEC-001 | `terraform fmt` passes; constraints are documented, not floating. |
+| FND-001 | Add `.gitignore` entries for `.terraform/`, state/backup files, plan artifacts, crash logs, override files, and local secret tfvars while preserving the provider lock file. | none | **Completed locally 2026-07-28**: ignore rules cover generated/state/plan/secret artifacts and explicitly retain `.terraform.lock.hcl`. |
+| FND-002 | Create `versions.tf` with an approved Terraform constraint and pinned-compatible AWS provider constraint. | DEC-001 | **Completed locally 2026-07-28**: Terraform is constrained to `>= 1.13.3, < 1.14.0`; AWS provider to `~> 6.47.0`; format check passed. |
 | FND-003 | Create `providers.tf` with the selected region, allowed-account validation, and default tags. | DEC-001, DEC-002, FND-002 | Provider configuration rejects an unexpected account/region and contains no credentials; local tests use a mocked provider. |
 | FND-004 | Create typed common variables for project, environment, region, account, tags, CIDRs, and feature switches. | DEC-001, DEC-002, DEC-003 | Every variable has type, description, nullable/default intent, and validation where useful. |
 | FND-005 | Create `locals.tf` for normalized names, merged tags, service identifiers, and repeated constants. | FND-004 | Resource names/tags are deterministic and collision rules are documented. |
@@ -237,7 +237,7 @@ flowchart LR
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
 | VAL-001 | Run `terraform fmt -check -recursive`, `terraform init -backend=false`, and `terraform validate`. | any Terraform code change | Exact command/output recorded; skipped checks are explicit. |
-| VAL-002 | Add/configure selected lint/security/policy tools and pin their versions. | FND-002 | Tool choice is documented; checks cover public exposure, encryption, IAM and destructive settings. |
+| VAL-002 | Add/configure selected lint/security/policy tools and pin their versions. | FND-002 | **Completed locally 2026-07-28**: TFLint `0.64.0` plus AWS ruleset `0.48.0` returned no issues; Trivy `0.72.0` returned zero HIGH/CRITICAL Terraform misconfigurations. |
 | VAL-003 | Add deterministic tests or fixture validation for account IDs, CIDRs, names/tags, capacity bounds, policies and lifecycle ownership. | FND-006, implementation | Expected valid/invalid cases run locally through `mock_provider "aws"` without AWS credentials. |
 | VAL-004 | Generate a saved nonproduction plan in the named account/region/environment. | implementation complete | **Requires explicit authorization and the real Account ID/credentials**; plan artifact handled securely. |
 | VAL-005 | Review the plan for creates/replacements/destroys, public paths, NAT routes, IAM/KMS, secret/state exposure, LT/ASG lifecycle, RDS/S3 retention and expected cost. | VAL-004 | Human-readable review checklist and decision recorded. |

@@ -61,7 +61,7 @@ resolved, but it must not merge production-shaped placeholders as if they were a
 
 | Order | PR name | Review surface | Task IDs | Entry gate | State |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | `foundation-toolchain` | Repository hygiene and pinned toolchain | `FND-001`, `FND-002`, `VAL-002` | DP-01; tool choice approved | in progress |
+| 1 | `foundation-toolchain` | Repository hygiene and pinned toolchain | `FND-001`, `FND-002`, `VAL-002` | DP-01; tool choice approved | implemented locally |
 | 2 | `foundation-provider-inputs` | Provider, names, variables, checks, fixtures | `FND-003` through `FND-006`, `VAL-003` | DP-01, DP-02; `foundation-toolchain` | in progress |
 | 3 | `foundation-validation` | Provider initialization and repository validation gate | `FND-007`, `FND-008`, `VAL-001` | `foundation-toolchain`, `foundation-provider-inputs`; provider download available | in progress |
 | 4 | `state-bootstrap` | State/bootstrap code and backend contract | `STATE-001` through `STATE-004` | DP-01, DP-03; `foundation-toolchain`, `foundation-validation` | blocked on decisions |

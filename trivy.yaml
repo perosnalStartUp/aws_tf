@@ -1,0 +1,13 @@
+format: table
+exit-code: 1
+severity:
+  - HIGH
+  - CRITICAL
+
+scan:
+  skip-dirs:
+    - .terraform
+
+misconfiguration:
+  scanners:
+    - terraform

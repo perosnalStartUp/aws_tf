@@ -24,7 +24,7 @@ This is the factual implementation record for the Terraform repository. Planned 
 | P1 roadmap | Implemented and statically reviewed locally | `TERRAFORM_P1_ROADMAP.md` |
 | Detailed P1 task map | Implemented and statically validated locally | `TERRAFORM_P1_TASKS.md` |
 | Detailed P1 PR map | Implemented and statically validated locally | `TERRAFORM_P1_PR_PLAN.md` |
-| Terraform `.tf` configuration | not created | no `.tf` files |
+| Terraform `.tf` configuration | Foundation toolchain implemented locally | `versions.tf`, pinned validation configuration |
 | Terraform init | completed against empty directory | Terraform v1.13.3 reported an empty-directory initialization |
 | Terraform validate/plan/apply | not run | no configuration or approved environment inputs |
 | AWS resources | not created or changed | documentation-only task |
@@ -261,6 +261,33 @@ Validation:
   development record;
 - Markdown fence balance and trailing-whitespace scan: passed for all changed documents;
 - Terraform test/validate/plan/apply and AWS verification: not run.
+
+### 2026-07-28 — Implement `foundation-toolchain`
+
+Scope:
+
+- added Terraform artifact and local-secret ignore rules while preserving the provider lock file;
+- constrained Terraform CLI to `>= 1.13.3, < 1.14.0` and AWS provider to `~> 6.47.0`;
+- configured TFLint `0.64.0`, AWS ruleset `0.48.0`, and Trivy Config `0.72.0`;
+- disabled only TFLint's unused-declaration rule while foundation inputs intentionally precede
+  their consuming domain resources;
+- installed TFLint and Trivy locally through Homebrew;
+- did not use AWS credentials, run a live plan/apply, or change AWS.
+
+Command evidence:
+
+- `terraform fmt -check -recursive` -> exit `0`;
+- `tflint --init` -> installed AWS ruleset `0.48.0`;
+- `tflint --recursive --format compact` -> exit `0`, no issues;
+- `trivy config --config trivy.yaml .` -> exit `0`, zero HIGH/CRITICAL Terraform
+  misconfigurations using the updated checks bundle;
+- `git diff --check` -> exit `0`.
+
+Repository evidence:
+
+- local branch: `codex/foundation-toolchain`;
+- parent baseline commit: `43f1d43`;
+- remote/GitHub PR: not created because no Git remote is configured.
 
 ## Evidence Rules
 
