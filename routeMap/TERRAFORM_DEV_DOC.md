@@ -458,6 +458,63 @@ Execution boundary:
 - AWS credentials/API: not used;
 - AWS resources and real Terraform State: not created.
 
+### 2026-07-28 — Implement local PR10–15 structure
+
+Scope:
+
+- preserved the user-selected `pr10_15` branch and made no branch, staging, commit, push, or PR
+  operation;
+- added a dedicated Terraform-managed rotating Training SQS/DLQ KMS key, encrypted Training queue
+  and DLQ, redrive allow policy, explicit queue policy, non-secret outputs, and required
+  visibility/renewal/retention/long-poll inputs;
+- added exact-subject GitHub OIDC trust and distinct Terraform deploy, Backend/Training Packer,
+  Backend/Training release, and Backend/Working/Training runtime roles;
+- scoped runtime access to direct product S3, queue KMS/SQS, database KMS/managed-secret resource
+  references plus explicitly external Working/Training secret and future log-group inputs;
+- isolated unavoidable read/build wildcard permissions in the Packer/release/deploy policies and
+  kept `iam:PassRole` limited to direct environment role references;
+- added a private PostgreSQL RDS instance, two-AZ database subnet group, parameter group, optional
+  Enhanced Monitoring role, Terraform-managed database KMS key, backups/deletion controls, and an
+  AWS-managed master password Secret;
+- added `BACKEND_MIGRATION_RUNBOOK.md` as the PR15 singleton migration and rollout-gate contract;
+  no executable migration workflow was invented because its owner and lock platform remain
+  unresolved.
+
+Input and ownership boundary:
+
+- real AWS account ID, GitHub organization/repositories/exact OIDC subjects, SQS timing, external
+  secret/log ARNs, future Launch Template/ASG names, and RDS sizing/version/retention values remain
+  required deployment inputs with no live defaults;
+- Mock tests use Account ID `123456789012`, `example-org`, fake but syntactically valid external
+  ARNs, and `mock_provider "aws"` only;
+- Training SQS/DLQ now uses its own Terraform-managed key; RDS/storage/managed-secret encryption
+  uses a separate Terraform-managed database key;
+- resources present in this root use `aws_*.<semantic_name>.arn` or `.id`; remaining constructed
+  LT/ASG ARNs and ARN variables identify external or future-PR resources and must be replaced with
+  direct references when their resources are added;
+- Packer/release role activation remains blocked on EXT-03;
+- migration execution owner, singleton-lock implementation, and workflow location remain
+  `[DECISION REQUIRED]`.
+
+Command evidence:
+
+- `terraform fmt -check -recursive` -> exit `0`;
+- root `terraform validate -no-color` -> exit `0`;
+- root `terraform test -no-color` -> exit `0`, 20 passed, 0 failed;
+- `tflint --format compact` -> exit `0`, no issues;
+- `trivy config --config trivy.yaml .` -> exit `0`, zero unsuppressed HIGH/CRITICAL
+  misconfigurations and exactly the three previously documented TCP `443` NAT egress ignores;
+- `git diff --check` -> exit `0`;
+- local validation required running the provider/scanner processes outside the filesystem sandbox;
+  it did not read AWS credentials or contact AWS APIs.
+
+Execution boundary:
+
+- live `terraform plan` / `terraform apply`: not run;
+- database migration and GitHub workflow: not created or run;
+- AWS credentials/API: not used;
+- AWS resources and real Terraform State: not created.
+
 ## Evidence Rules
 
 Each future entry records:

@@ -250,16 +250,20 @@ be reconciled with the worker's `checkpoints/{jobId}/worker_state.json`.
 
 ## 7. KMS and Secrets
 
-Terraform creates and owns a rotating per-environment product-data KMS key. Product S3 references
-it directly through `aws_kms_key.product.arn`. The key policy enables account IAM authorization;
-Backend, Working, and Training receive actual use only through their scoped IAM role policies.
-Whether Training SQS reuses this product key or receives a separate queue key remains
-`[DECISION REQUIRED]`.
+Terraform creates and owns separate rotating per-environment KMS keys for product data, Training
+SQS/DLQ, and RDS/storage-managed-secret encryption. Resources in this root reference those keys
+directly through `aws_kms_key.product.arn`, `aws_kms_key.training_queue.arn`, and
+`aws_kms_key.database.arn`. Key policies enable account IAM authorization; consumers receive
+actual use only through their scoped IAM role policies.
 
-Secret values must not enter Terraform state. Terraform may provision policies and accept an
-existing secret ARN/identifier. Required runtime secrets include at least RDS credentials and the
-single approved Training callback secret; Working authentication depends on the confirmed auth
-mode.
+Secret values must not enter Terraform configuration or outputs. RDS generates and owns its master
+password in Secrets Manager through `manage_master_user_password`; Terraform exposes only the
+managed secret ARN. External Working authentication and Training callback secrets remain required
+ARN inputs and are not created by this root.
+
+Resources created in the same root are referenced through `aws_*.<semantic_name>.arn` or `.id`.
+ARN inputs are reserved for external resources or explicit cross-PR boundaries, and are replaced
+with direct references when the owning Terraform resource is added.
 
 ## 8. IAM Roles
 

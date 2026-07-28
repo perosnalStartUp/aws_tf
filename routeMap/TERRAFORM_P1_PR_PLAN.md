@@ -74,12 +74,12 @@ resolved, but it must not merge production-shaped placeholders as if they were a
 | 7 | `network-private-dns` | Private DNS and network outputs | `NET-011`, `NET-012` | DP-05; `network-vpc-subnets`, `network-egress-s3-endpoint` | implemented locally; real zone pending |
 | 8 | `security-groups` | Security-group graph | `SG-001` through `SG-007` | DP-04, DP-05, DP-08; `network-vpc-subnets` | implemented locally; real ports pending |
 | 9 | `data-kms-s3` | Product KMS and S3 data boundary | `DATA-001` through `DATA-004` | DP-07; `foundation-provider-inputs`, `foundation-validation` | implemented locally; names/prefixes pending |
-| 10 | `messaging-training-sqs` | Training SQS and DLQ | `DATA-005`, `DATA-006` | DP-06, DP-07; `data-kms-s3` | blocked on decisions |
-| 11 | `iam-deploy-oidc` | Terraform deploy IAM and GitHub OIDC trust | `IAM-001`, `IAM-005` | DP-09; `foundation-provider-inputs`, `foundation-validation` | blocked on decisions |
-| 12 | `iam-runtime-roles` | Backend, Working, Training runtime IAM | `IAM-002` through `IAM-004` | DP-05, DP-06; `data-kms-s3`, `messaging-training-sqs` | blocked on decisions |
-| 13 | `iam-build-release-roles` | IAM policy verification and release-role boundary | `IAM-006`, `IAM-007` | DP-09; `iam-deploy-oidc`, `iam-runtime-roles`; EXT-03 | blocked on external governance |
-| 14 | `database-rds` | Private PostgreSQL RDS | `RDS-001` through `RDS-004` | DP-08; `security-groups`, `data-kms-s3` | blocked on decisions |
-| 15 | `database-migration-runner` | One-time Backend migration release boundary | `RDS-005`, `BE-009` | DP-08; Backend execution owner confirmed; `database-rds` | blocked on Backend decision |
+| 10 | `messaging-training-sqs` | Training SQS and DLQ | `DATA-005`, `DATA-006` | DP-06, DP-07; `data-kms-s3` | implemented locally with required timing inputs |
+| 11 | `iam-deploy-oidc` | Terraform deploy IAM and GitHub OIDC trust | `IAM-001`, `IAM-005` | DP-09; `foundation-provider-inputs`, `foundation-validation` | implemented locally with required exact subjects |
+| 12 | `iam-runtime-roles` | Backend, Working, Training runtime IAM | `IAM-002` through `IAM-004` | DP-05, DP-06; `data-kms-s3`, `messaging-training-sqs` | implemented locally; external secret/log ARNs pending |
+| 13 | `iam-build-release-roles` | IAM policy verification and release-role boundary | `IAM-006`, `IAM-007` | DP-09; `iam-deploy-oidc`, `iam-runtime-roles`; EXT-03 | structural roles implemented locally; activation blocked on EXT-03 |
+| 14 | `database-rds` | Private PostgreSQL RDS | `RDS-001` through `RDS-004` | DP-08; `security-groups`, `data-kms-s3` | implemented locally with required deployment inputs |
+| 15 | `database-migration-runner` | One-time Backend migration release boundary | `RDS-005`, `BE-009` | DP-08; Backend execution owner confirmed; `database-rds` | runbook/gate defined; executable runner blocked on owner |
 | 16 | `compute-backend-core` | Backend LT, target group, ASG, and ALB | `BE-001` through `BE-005` | DP-04; network/data/IAM prerequisites | blocked on decisions/artifact |
 | 17 | `edge-backend-https` | Backend HTTPS/DNS and `$Default` relationship | `BE-006`, `BE-007` | DP-04; `compute-backend-core` | blocked on decisions |
 | 18 | `compute-working-v0` | Working V0 single EC2 and private record | `WK-001` through `WK-004` | DP-05; exact Working AMI; network/security/runtime-IAM prerequisites | blocked on artifact/decisions |

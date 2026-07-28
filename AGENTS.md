@@ -17,6 +17,7 @@ full:
 9. `routeMap/TERRAFORM_DEV_DOC.md`
 10. `routeMap/TERRAFORM_P1_ROADMAP.md`
 11. `routeMap/TERRAFORM_P1_TASKS.md`
+12. `routeMap/BACKEND_MIGRATION_RUNBOOK.md`
 12. `routeMap/TERRAFORM_P1_PR_PLAN.md`
 
 When a task changes a consuming service contract, also read that service repository's root

@@ -59,6 +59,60 @@ variables {
       write_prefixes = ["adapters", "checkpoints", "logs"]
     }
   }
+
+  training_queue_visibility_timeout_seconds  = 600
+  training_visibility_renew_interval_seconds = 120
+  training_queue_message_retention_seconds   = 345600
+  training_dlq_message_retention_seconds     = 1209600
+  training_queue_receive_wait_time_seconds   = 20
+  training_queue_max_receive_count           = 5
+  training_queue_kms_deletion_window_days    = 30
+
+  github_organization = "example-org"
+  github_repositories = {
+    terraform = "terraform"
+    backend   = "small_backend"
+    gpu       = "gpu_ec2"
+  }
+  github_oidc_subjects = {
+    terraform        = ["repo:example-org/terraform:environment:test"]
+    backend_packer   = ["repo:example-org/small_backend:ref:refs/heads/main"]
+    backend_release  = ["repo:example-org/small_backend:environment:test"]
+    training_packer  = ["repo:example-org/gpu_ec2:ref:refs/heads/main"]
+    training_release = ["repo:example-org/gpu_ec2:environment:test"]
+  }
+  working_auth_secret_arn      = "arn:aws:secretsmanager:us-east-1:123456789012:secret:working-auth-AbCdEf"
+  training_callback_secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:training-callback-AbCdEf"
+  runtime_log_group_arns = {
+    backend  = ["arn:aws:logs:us-east-1:123456789012:log-group:/personal-lora/test/backend:*"]
+    working  = ["arn:aws:logs:us-east-1:123456789012:log-group:/personal-lora/test/working:*"]
+    training = ["arn:aws:logs:us-east-1:123456789012:log-group:/personal-lora/test/training:*"]
+  }
+  backend_launch_template_name  = "personal-lora-test-backend"
+  backend_asg_name              = "personal-lora-test-backend"
+  training_launch_template_name = "personal-lora-test-training"
+  training_asg_name             = "personal-lora-test-training"
+
+  database_name                                = "personal_lora"
+  database_master_username                     = "loraadmin"
+  database_engine_version                      = "16.3"
+  database_parameter_group_family              = "postgres16"
+  database_instance_class                      = "db.t4g.micro"
+  database_allocated_storage_gib               = 20
+  database_max_allocated_storage_gib           = 100
+  database_storage_type                        = "gp3"
+  database_multi_az                            = false
+  database_backup_retention_days               = 7
+  database_backup_window                       = "03:00-04:00"
+  database_maintenance_window                  = "sun:04:00-sun:05:00"
+  database_deletion_protection                 = true
+  database_skip_final_snapshot                 = false
+  database_final_snapshot_identifier           = "personal-lora-test-final"
+  database_enabled_log_exports                 = ["postgresql"]
+  database_monitoring_interval_seconds         = 0
+  database_performance_insights_enabled        = false
+  database_performance_insights_retention_days = 7
+  database_kms_deletion_window_days            = 30
 }
 
 run "accepts_valid_foundation_inputs" {
@@ -78,6 +132,30 @@ run "accepts_valid_foundation_inputs" {
     condition     = local.common_tags.ManagedBy == "Terraform"
     error_message = "Required governance tags must override extra tags."
   }
+
+  assert {
+    condition     = local.backend_runtime_role.name != local.backend_release_role.name
+    error_message = "Backend runtime and release authorities must remain separate roles."
+  }
+
+}
+
+run "rejects_oidc_subject_from_another_organization" {
+  command = plan
+
+  variables {
+    github_oidc_subjects = {
+      terraform        = ["repo:other-org/terraform:environment:test"]
+      backend_packer   = ["repo:example-org/small_backend:ref:refs/heads/main"]
+      backend_release  = ["repo:example-org/small_backend:environment:test"]
+      training_packer  = ["repo:example-org/gpu_ec2:ref:refs/heads/main"]
+      training_release = ["repo:example-org/gpu_ec2:environment:test"]
+    }
+  }
+
+  expect_failures = [
+    var.github_oidc_subjects,
+  ]
 }
 
 run "rejects_invalid_account_id" {
