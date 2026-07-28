@@ -94,8 +94,8 @@ flowchart LR
 | FND-004 | Create typed common variables for project, environment, region, account, tags, CIDRs, and feature switches. | DEC-001, DEC-002, DEC-003 | **Completed locally 2026-07-28**: typed, described and validated foundation inputs exist with no live-environment defaults. |
 | FND-005 | Create `locals.tf` for normalized names, merged tags, service identifiers, and repeated constants. | FND-004 | **Completed locally 2026-07-28**: names/tags and IPv4 CIDR ranges are deterministic. |
 | FND-006 | Add Terraform `check`/precondition rules for account, CIDR non-overlap, two distinct AZs, capacity bounds, exact AMI format, and no public EC2 assignment. | FND-004 | **Completed locally 2026-07-28**: valid and invalid fixtures passed 9 mock-provider tests, including CIDR containment/overlap and capacity/public-IP failures. |
-| FND-007 | Re-run `terraform init` after provider configuration and commit the generated `.terraform.lock.hcl`. | FND-002, FND-003 | Init succeeds, provider checksum lock exists, `.terraform/` remains ignored. |
-| FND-008 | Run baseline `terraform fmt -check -recursive` and `terraform validate`; record exact versions/results. | FND-007 | Both commands pass or blockers are recorded without claiming success. |
+| FND-007 | Re-run `terraform init` after provider configuration and commit the generated `.terraform.lock.hcl`. | FND-002, FND-003 | **Completed locally 2026-07-28**: `terraform init -backend=false` installed AWS provider `6.47.0`; checksum lock is committed by `foundation-validation`; `.terraform/` remains ignored. |
+| FND-008 | Run baseline `terraform fmt -check -recursive` and `terraform validate`; record exact versions/results. | FND-007 | **Completed locally 2026-07-28**: recursive format check and `terraform validate -no-color` both exited `0`. |
 
 ## 6. State Bootstrap and Access
 
@@ -236,7 +236,7 @@ flowchart LR
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| VAL-001 | Run `terraform fmt -check -recursive`, `terraform init -backend=false`, and `terraform validate`. | any Terraform code change | Exact command/output recorded; skipped checks are explicit. |
+| VAL-001 | Run `terraform fmt -check -recursive`, `terraform init -backend=false`, and `terraform validate`. | any Terraform code change | **Completed locally 2026-07-28 for the foundation root**: all three commands exited `0`; no backend, live plan, AWS credentials, or AWS API operation was used. |
 | VAL-002 | Add/configure selected lint/security/policy tools and pin their versions. | FND-002 | **Completed locally 2026-07-28**: TFLint `0.64.0` plus AWS ruleset `0.48.0` returned no issues; Trivy `0.72.0` returned zero HIGH/CRITICAL Terraform misconfigurations. |
 | VAL-003 | Add deterministic tests or fixture validation for account IDs, CIDRs, names/tags, capacity bounds, policies and lifecycle ownership. | FND-006, implementation | **Completed locally 2026-07-28**: `terraform test -no-color` passed 9/9 cases through `mock_provider "aws"` and test-only Account ID `123456789012`; AWS credentials were not used. |
 | VAL-004 | Generate a saved nonproduction plan in the named account/region/environment. | implementation complete | **Requires explicit authorization and the real Account ID/credentials**; plan artifact handled securely. |

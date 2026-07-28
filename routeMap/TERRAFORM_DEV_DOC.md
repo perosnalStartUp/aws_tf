@@ -25,9 +25,10 @@ This is the factual implementation record for the Terraform repository. Planned 
 | Detailed P1 task map | Implemented and statically validated locally | `TERRAFORM_P1_TASKS.md` |
 | Detailed P1 PR map | Implemented and statically validated locally | `TERRAFORM_P1_PR_PLAN.md` |
 | Terraform `.tf` configuration | Foundation provider inputs implemented and tested locally | provider, typed variables, deterministic locals/checks, mock fixtures |
-| Terraform init | completed against empty directory | Terraform v1.13.3 reported an empty-directory initialization |
-| Terraform validate/plan/apply | not run | no configuration or approved environment inputs |
-| AWS resources | not created or changed | documentation-only task |
+| Terraform init | Foundation provider initialized locally without a backend | AWS provider `6.47.0` locked in `.terraform.lock.hcl` |
+| Terraform validate/test | Passed locally | validate passed; mock-provider tests passed 9/9 |
+| Terraform live plan/apply | not run | no named/approved live environment inputs |
+| AWS resources | not created or changed | all foundation validation was local/mock-only |
 | Packer/AMI build | not run | out of this task's execution scope |
 | GitHub workflow | not created or run | design only |
 
@@ -315,6 +316,40 @@ Repository evidence:
 
 - local branch: `codex/foundation-provider-inputs`;
 - parent toolchain commit: `c80bf06`;
+- remote/GitHub PR: not created because no Git remote is configured.
+
+### 2026-07-28 — Implement `foundation-validation`
+
+Scope:
+
+- initialized the root without a backend after provider configuration existed;
+- installed and locked AWS provider `6.47.0` checksums in `.terraform.lock.hcl`;
+- ran the full foundation format, validate, mock-test, lint, and configuration-security gate;
+- kept `.terraform/` ignored and did not create Terraform State;
+- did not use AWS credentials, run a live plan/apply, or change AWS.
+
+Command evidence:
+
+- `terraform init -backend=false` -> exit `0`, AWS provider `6.47.0` installed;
+- `terraform fmt -check -recursive` -> exit `0`;
+- `terraform validate -no-color` -> exit `0`, configuration valid;
+- `terraform test -no-color` -> exit `0`, 9 passed, 0 failed;
+- `tflint --recursive --format compact` -> exit `0`, no issues;
+- `trivy config --config trivy.yaml .` -> exit `0`, zero HIGH/CRITICAL Terraform
+  misconfigurations;
+- `git diff --check` -> exit `0`.
+
+Execution boundary:
+
+- `terraform plan`: not run;
+- `terraform apply`: not run;
+- AWS credentials/API: not used;
+- Terraform State/AWS resources: not created.
+
+Repository evidence:
+
+- local branch: `codex/foundation-validation`;
+- parent provider-input commit: `cc4e9ff`;
 - remote/GitHub PR: not created because no Git remote is configured.
 
 ## Evidence Rules

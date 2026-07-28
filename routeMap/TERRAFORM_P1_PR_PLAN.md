@@ -63,7 +63,7 @@ resolved, but it must not merge production-shaped placeholders as if they were a
 | ---: | --- | --- | --- | --- | --- |
 | 1 | `foundation-toolchain` | Repository hygiene and pinned toolchain | `FND-001`, `FND-002`, `VAL-002` | DP-01; tool choice approved | implemented locally |
 | 2 | `foundation-provider-inputs` | Provider, names, variables, checks, fixtures | `FND-003` through `FND-006`, `VAL-003` | DP-01, DP-02; `foundation-toolchain` | implemented locally |
-| 3 | `foundation-validation` | Provider initialization and repository validation gate | `FND-007`, `FND-008`, `VAL-001` | `foundation-toolchain`, `foundation-provider-inputs`; provider download available | in progress |
+| 3 | `foundation-validation` | Provider initialization and repository validation gate | `FND-007`, `FND-008`, `VAL-001` | `foundation-toolchain`, `foundation-provider-inputs`; provider download available | implemented locally |
 | 4 | `state-bootstrap` | State/bootstrap code and backend contract | `STATE-001` through `STATE-004` | DP-01, DP-03; `foundation-toolchain`, `foundation-validation` | blocked on decisions |
 | 5 | `network-vpc-subnets` | VPC, six subnets, IGW, public/DB routing | `NET-001` through `NET-006`, `NET-009` | DP-02; `foundation-provider-inputs`, `foundation-validation` | blocked on decisions |
 | 6 | `network-egress-s3-endpoint` | Single NAT and S3 Gateway Endpoint | `NET-007`, `NET-008`, `NET-010` | `network-vpc-subnets` | planned |
