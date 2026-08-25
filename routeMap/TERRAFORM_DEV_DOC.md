@@ -652,6 +652,88 @@ Execution boundary:
 - AWS resources and real Terraform State: not created or changed;
 - branch remained `pr16_20`; no branch, staging, commit, push or PR operation was performed.
 
+### 2026-08-24 — Add bilingual repository README and implementation architecture guide
+
+Scope:
+
+- added `README.md` and `README.zh-CN.md` with reciprocal language navigation;
+- documented the implemented Backend, Working/Serving V0, and Training compute models;
+- added Mermaid diagrams for the full AWS topology, SQS-to-ASG Training sequence, and Backend
+  ALB/ASG target lifecycle;
+- documented the exact SQS scale-from-zero metric expression, queue reliability behavior,
+  Training scale-in protection, Backend health replacement/draining, and AMI ownership model;
+- inventoried the Terraform-managed network, edge, compute, data, messaging, IAM, observability,
+  cost, State, and operations resources;
+- inspected the sibling Backend/GPU implementation to distinguish the implemented
+  `SetInstanceProtection` path from the still-absent direct runtime lifecycle-hook heartbeat and
+  completion calls, and retained the existing SQS/callback contract-alignment boundary;
+- did not copy `gpu_ec2/routeMap/design/image.png` because it combines the current Working V0 with
+  a future Working V1 internal-ALB/ASG topology and would misrepresent this repository's deployed
+  shape;
+- did not change Terraform resources, service contracts, workflows, State, or AWS.
+
+Status boundary:
+
+- the READMEs describe the Terraform resource graph as implemented in this repository;
+- they explicitly separate repository implementation from live AWS deployment/verification;
+- they do not claim that lifecycle-hook completion, real SQS scaling, ALB replacement, AMI
+  rollout, plan, apply, or AWS smoke tests ran.
+
+Validation:
+
+- `git diff --check` -> exit `0`;
+- README Markdown fence parity, local-link target existence, and critical SQS/protection/ALB term
+  checks -> exit `0`;
+- `terraform fmt -check -recursive` -> exit `0`;
+- sandboxed `terraform validate -no-color` could not start the already-installed AWS provider;
+  rerunning the same local validation outside the filesystem sandbox -> exit `0`, configuration
+  valid, with no AWS credentials/API use;
+- `terraform test -no-color` -> exit `0`, 23 passed and 0 failed with `mock_provider "aws"`;
+- `tflint --recursive --format compact` -> exit `0`, no issues;
+- `trivy config --config trivy.yaml .` -> exit `0`, zero misconfigurations and the same four
+  documented ignores (three HTTPS NAT-egress rules and the sole public Backend ALB);
+- live `terraform plan` / `terraform apply`: not run;
+- AWS credentials/API and AWS resources: not used or changed.
+
+### 2026-08-24 — Consolidate Terraform root files by infrastructure domain
+
+Scope:
+
+- reduced the root Terraform file count from 64 to 16 without changing resource addresses,
+  variable names, output names, expressions, lifecycle settings, policies, or provider/backend
+  contracts;
+- consolidated network resources, inputs, locals and outputs into `network.tf`;
+- consolidated security groups and rules into `security.tf`;
+- consolidated product S3/KMS/policies into `data_storage.tf`;
+- consolidated Training SQS/DLQ/KMS/policies into `messaging.tf`;
+- consolidated PostgreSQL RDS/KMS into `database.tf`;
+- consolidated OIDC, workflow, runtime, deploy, Packer and release IAM into `iam.tf`;
+- consolidated Backend, Working and Training resources into `backend_compute.tf`,
+  `working_compute.tf` and `training_compute.tf` respectively;
+- consolidated logs, Flow Logs, alarms, dashboard and cost controls into `observability.tf`;
+- kept `backend.tf`, `versions.tf`, `providers.tf`, `variables.tf`, `locals.tf`, and
+  `foundation_checks.tf` separate because they are cross-domain root contracts;
+- kept the independent `bootstrap/state` root unchanged;
+- updated both READMEs and `TERRAFORM_AWS_DESIGN.md` to match the consolidated layout;
+- did not change AWS topology, runtime contracts, IAM authority, State, workflows, or live AWS.
+
+Validation:
+
+- root `.tf` inventory -> reduced from 64 files to 16 files; `bootstrap/state` remained unchanged;
+- declaration inventory comparison against `HEAD` for every root/bootstrap `resource`, `data`,
+  `variable`, `output`, and `check` header -> no differences;
+- `git diff --check` -> exit `0`;
+- `terraform fmt -check -recursive` -> exit `0`;
+- sandboxed `terraform validate -no-color` could not start the already-installed AWS provider;
+  rerunning outside the filesystem sandbox -> exit `0`, configuration valid, with no AWS
+  credentials/API use;
+- `terraform test -no-color` -> exit `0`, 23 passed and 0 failed with `mock_provider "aws"`;
+- `tflint --recursive --format compact` -> exit `0`, no issues;
+- `trivy config --config trivy.yaml .` -> exit `0`, zero misconfigurations and the same four
+  documented ignores, now at their consolidated file locations;
+- live `terraform plan` / `terraform apply`: not run;
+- AWS credentials/API and AWS resources: not used or changed.
+
 ## Evidence Rules
 
 Each future entry records:

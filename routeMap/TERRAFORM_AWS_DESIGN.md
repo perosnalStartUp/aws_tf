@@ -317,33 +317,33 @@ Terraform input change.
 
 ## 9. Terraform Resource Layout
 
-The initial root layout should use focused files rather than premature modules:
+The current root uses one consolidated file per bounded infrastructure domain. Shared provider,
+input, local, and cross-domain check surfaces remain separate; domain-specific variables and
+outputs stay with their resources. This keeps the root reviewable without fragmenting one domain
+across many small files or introducing premature child modules:
 
 ```text
+backend.tf
 versions.tf
 providers.tf
 variables.tf
 locals.tf
+foundation_checks.tf
 network.tf
-endpoints.tf
-security_groups.tf
-kms.tf
-s3.tf
-sqs.tf
-rds.tf
-iam_deploy.tf
-iam_runtime.tf
-iam_workflows.tf
+security.tf
+data_storage.tf
+messaging.tf
+database.tf
+iam.tf
 backend_compute.tf
 working_compute.tf
 training_compute.tf
-dns.tf
-monitoring.tf
-outputs.tf
+observability.tf
 ```
 
-Backend/bootstrap configuration may be separated when the state decision is made. Reusable modules
-should be introduced only after the boundaries repeat and inputs/outputs are stable.
+The independent `bootstrap/state` root remains separate because of its lifecycle and backend
+bootstrap boundary. Reusable child modules should be introduced only after boundaries repeat and
+their inputs/outputs are stable.
 
 ## 10. Observability and Operations
 
