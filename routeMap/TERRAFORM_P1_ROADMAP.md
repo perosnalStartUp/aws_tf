@@ -15,10 +15,10 @@ task-to-PR mapping are maintained in `TERRAFORM_P1_PR_PLAN.md`.
 | P1-2 Provider, naming, and network | Implemented locally; real allocation/name pending | validated VPC/subnet/route/endpoints design |
 | P1-3 KMS, S3, SQS | Product data and Training messaging implemented locally | encrypted data/messaging resources and scoped policies validate |
 | P1-4 IAM and security groups | SG/IAM graph implemented locally; release activation blocked on EXT-03 | deploy/build/release/runtime boundaries and SG graph validate |
-| P1-5 RDS, Backend ASG, and ALB | RDS/migration boundary implemented locally; Backend compute pending | Backend infrastructure validates with migration/release boundary |
-| P1-6 Working V0 single instance | Blocked on AMI/runtime inputs | private single EC2 and private DNS validate |
-| P1-7 Training ASG/lifecycle/scaling | Blocked on runtime contract | ASG/SQS scaling/lifecycle design validates without unsafe refresh |
-| P1-8 Monitoring and release integration | Planned | alarms/logs/OIDC workflows and drift cases validate |
+| P1-5 RDS, Backend ASG, and ALB | Terraform structure implemented locally; real runtime/domain/migration inputs blocked | Backend infrastructure validates with migration/release boundary |
+| P1-6 Working V0 single instance | Terraform structure implemented locally; real AMI/TLS/runtime blocked | private single EC2 and private DNS validate |
+| P1-7 Training ASG/lifecycle/scaling | Terraform structure implemented locally; EXT-01/02/04 and measured thresholds blocked | ASG/SQS scaling/lifecycle design validates without unsafe refresh |
+| P1-8 Monitoring and release integration | Terraform-owned structure/runbooks implemented locally; application metrics and external workflows blocked | alarms/logs/OIDC workflows and drift cases validate |
 | P1-9 Nonproduction plan/deploy | Requires explicit authorization | reviewed plan, approved apply, and recorded verification |
 
 ## P1-0 — Control and Design Baseline
@@ -161,7 +161,8 @@ Deliverables:
 
 Deliverables:
 
-- log groups/retention, dashboards, service alarms, notification targets;
+- encrypted log groups/retention, VPC Flow Logs, infrastructure dashboards/alarms and required
+  notification-target inputs are implemented locally;
 - Backend and Training OIDC release workflows following `AMI_ASG_RELEASE_DESIGN.md`;
 - exact Packer manifest handoff;
 - component concurrency controls;
@@ -169,14 +170,21 @@ Deliverables:
 - rollback and actual-fleet verification;
 - cost/budget alerts after owner thresholds are decided.
 
+The Terraform root now implements CloudWatch infrastructure metrics plus required owner-supplied
+alarm/budget inputs. GPU/disk/process/callback/job-result metrics remain consumer-runtime work and
+are not invented by Terraform. Operations, release activation and service validation procedures
+are recorded in `OPERATIONS_RUNBOOK.md`, `RELEASE_WORKFLOW_CONTRACT.md`, and
+`SERVICE_VALIDATION_RUNBOOK.md`.
+
 Confirmed repository split:
 
 - Terraform deploy/State and Working V0 deployment: `terraform`;
 - Backend Packer/release: `small_backend`;
 - Working/Training Packer and Training release: `gpu_ec2`.
 
-Exact GitHub org/repository identifiers, refs, environments and approval rules remain owner inputs
-for the OIDC trust policies.
+Exact GitHub org/repository identifiers, refs, environments, approval rules, backend/variable
+delivery and saved-plan handling remain owner inputs. PR24/25 executable workflows belong to the
+Backend/GPU repositories; PR26 cannot safely become executable until `DEC-012` is complete.
 
 ## P1-9 — Nonproduction Plan and Deployment
 

@@ -8,6 +8,7 @@ locals {
       local.training_release_role.arn,
     ],
     aws_iam_role.rds_monitoring[*].arn,
+    [aws_iam_role.vpc_flow_logs.arn],
   )
 }
 
@@ -22,6 +23,9 @@ resource "aws_iam_role_policy" "terraform_deploy" {
         Effect = "Allow"
         Action = [
           "autoscaling:*",
+          "budgets:*",
+          "ce:*",
+          "cloudwatch:*",
           "ec2:*",
           "elasticloadbalancing:*",
           "logs:*",
@@ -75,6 +79,7 @@ resource "aws_iam_role_policy" "terraform_deploy" {
           aws_kms_key.product.arn,
           aws_kms_key.training_queue.arn,
           aws_kms_key.database.arn,
+          aws_kms_key.observability.arn,
         ]
       },
       {
@@ -138,6 +143,7 @@ resource "aws_iam_role_policy" "terraform_deploy" {
             aws_iam_openid_connect_provider.github.arn,
           ],
           aws_iam_role.rds_monitoring[*].arn,
+          [aws_iam_role.vpc_flow_logs.arn],
         )
       },
     ]

@@ -13,6 +13,7 @@ locals {
     Owner       = trimspace(var.owner)
     CostCenter  = trimspace(var.cost_center)
     ManagedBy   = "Terraform"
+    Deployment  = local.name_prefix
   }
 
   common_tags = merge(var.extra_tags, local.required_tags)

@@ -73,7 +73,7 @@ resource "aws_iam_role_policy" "backend_release" {
           "ec2:CreateLaunchTemplateVersion",
           "ec2:ModifyLaunchTemplate",
         ]
-        Resource = "arn:aws:ec2:${var.aws_region}:${var.aws_account_id}:launch-template/*"
+        Resource = aws_launch_template.backend.arn
         Condition = {
           StringEqualsIfExists = {
             "aws:ResourceTag/Component" = "backend"
@@ -88,7 +88,7 @@ resource "aws_iam_role_policy" "backend_release" {
           "autoscaling:RollbackInstanceRefresh",
           "autoscaling:StartInstanceRefresh",
         ]
-        Resource = "arn:aws:autoscaling:${var.aws_region}:${var.aws_account_id}:autoScalingGroup:*:autoScalingGroupName/${var.backend_asg_name}"
+        Resource = aws_autoscaling_group.backend.arn
       },
     ]
   })
@@ -121,7 +121,7 @@ resource "aws_iam_role_policy" "training_release" {
           "ec2:CreateLaunchTemplateVersion",
           "ec2:ModifyLaunchTemplate",
         ]
-        Resource = "arn:aws:ec2:${var.aws_region}:${var.aws_account_id}:launch-template/*"
+        Resource = aws_launch_template.training.arn
         Condition = {
           StringEqualsIfExists = {
             "aws:ResourceTag/Component" = "training"

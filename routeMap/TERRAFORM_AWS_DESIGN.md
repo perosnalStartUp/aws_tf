@@ -184,6 +184,12 @@ depth but cannot replace application authentication.
 Instance type, minimum/maximum capacity, warmup, health thresholds, and refresh preferences are
 `[DECISION REQUIRED]`.
 
+The local Terraform structure now expresses these as required inputs without deployment defaults.
+It creates the hardened Backend LT, private two-subnet ASG, target group, internet-facing ALB,
+HTTPS listener, redirect-only HTTP listener, and public alias. Backend user data contains only
+resource identifiers and non-secret runtime configuration; compatibility with the real Backend AMI
+remains unverified.
+
 ### 5.2 GPU Working V0 — Confirmed
 
 - Exactly one EC2 instance in a private application subnet.
@@ -197,6 +203,11 @@ Instance type, minimum/maximum capacity, warmup, health thresholds, and refresh 
 
 Subnet/AZ, GPU instance type, root/cache volume sizes, service port, replacement downtime
 expectation, and health validation are `[DECISION REQUIRED]`.
+
+The local Terraform structure keeps Version 0 as exactly one private `aws_instance`, with encrypted
+root/cache EBS, IMDSv2, its dedicated profile/SG, and a private Route53 A record. All runtime
+limits/paths and the exact AMI remain required inputs; no Working LT, ASG, target group, ALB,
+public IP, or SSH configuration exists.
 
 ### 5.3 GPU Training
 
@@ -213,6 +224,13 @@ expectation, and health validation are `[DECISION REQUIRED]`.
 
 GPU instance type, desired/min/max capacity, scale-to-zero behavior, scaling metric/threshold,
 cooldowns, warmup, lifecycle-hook heartbeat, and maximum job duration are `[DECISION REQUIRED]`.
+
+The local Terraform structure creates an On-Demand-only private LT/ASG, termination lifecycle hook,
+and simple scale policies driven by CloudWatch metric math:
+`IF(InService > 0, visible_messages / InService, visible_messages)`. The zero-instance branch lets
+visible backlog invoke the scale-out policy. Thresholds, periods, adjustments, cooldowns, warmup,
+and lifecycle results remain required evidence-derived inputs; Mock values are not deployment
+defaults. Scale-in protection remains authoritative, and no routine Training refresh exists.
 
 ## 6. Data and Messaging
 
@@ -264,6 +282,11 @@ ARN inputs and are not created by this root.
 Resources created in the same root are referenced through `aws_*.<semantic_name>.arn` or `.id`.
 ARN inputs are reserved for external resources or explicit cross-PR boundaries, and are replaced
 with direct references when the owning Terraform resource is added.
+
+CloudWatch runtime and VPC Flow Log groups use a separate rotating Terraform-managed KMS key. The
+Backend, Working and Training roles reference only their own Terraform-created log group ARN.
+Alarm action ARNs and cost-notification emails remain required external owner inputs because this
+root does not own the notification topic or recipients.
 
 ## 8. IAM Roles
 
@@ -434,3 +457,36 @@ Confirmed:
 - Working/Training build and Training release workflows belong to `gpu_ec2`.
 - Build workflows hand off immutable AMI manifests and do not gain Terraform State or unrelated
   release permissions.
+
+### 2026-07-28 — Local Backend, Working, and Training Compute Structure
+
+Confirmed implementation boundary:
+
+- the public Backend ALB is the sole public application resource and uses HTTP `80` only to
+  redirect to HTTPS `443`;
+- Backend and Training ASGs consume `$Default`, while Terraform owns every non-AMI LT field;
+- Working V0 remains one private Terraform-managed EC2 and accepts replacement downtime;
+- Training uses only On-Demand ASG capacity, a termination lifecycle hook, worker protection, and
+  SQS backlog-per-InService scaling with explicit zero-worker behavior;
+- runtime user data contains identifiers and non-secret settings only—no callback token, database
+  password, API key, or AWS key;
+- this is Mock/static implementation evidence, not proof that the real AMIs, lifecycle path,
+  callback route, scale-from-zero behavior, or Backend health path work.
+
+### 2026-07-28 — Observability and Operations Boundary
+
+Confirmed implementation boundary:
+
+- Terraform creates the encrypted Backend, Working, Training and VPC Flow Log groups and the Flow
+  Log role/resource using direct resource references;
+- required inputs carry real retention, alarm action, alarm threshold, budget and notification
+  decisions; Mock recipients and values remain tests only;
+- infrastructure-native ALB, SQS/DLQ, RDS, EC2 and NAT metrics are wired to alarms/dashboard;
+- Terraform does not invent GPU, disk, process, callback, lifecycle or job-result metric emission
+  that the consumer runtimes do not yet provide;
+- SSM/no-SSH, NAT outage/two-NAT evolution, retention/deletion, Backend review and Working
+  replacement procedures are documented, but no operational action is authorized by those
+  documents;
+- executable Backend/Training workflows remain in their owning repositories, and the Terraform
+  Working workflow remains blocked until the real environment/backend/variable/approval contract
+  is decided.

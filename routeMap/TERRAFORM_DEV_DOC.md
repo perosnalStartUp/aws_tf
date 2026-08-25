@@ -24,13 +24,13 @@ This is the factual implementation record for the Terraform repository. Planned 
 | P1 roadmap | Implemented and statically reviewed locally | `TERRAFORM_P1_ROADMAP.md` |
 | Detailed P1 task map | Implemented and statically validated locally | `TERRAFORM_P1_TASKS.md` |
 | Detailed P1 PR map | Implemented and statically validated locally | `TERRAFORM_P1_PR_PLAN.md` |
-| Terraform `.tf` configuration | Foundation through product KMS/S3 and SG graph implemented locally | State; network/DNS; SGs; product KMS/S3 |
+| Terraform `.tf` configuration | Foundation through Terraform-owned PR28 structure implemented locally | State/network/data/IAM/RDS; compute; observability/cost; operations/release contracts |
 | Terraform init | Root and `bootstrap/state` initialized locally with backend disabled | AWS provider `6.47.0` locked separately in both roots |
-| Terraform validate/test | Passed locally | both roots validate; root Mock tests 17/17 and State Mock tests 3/3 |
+| Terraform validate/test | Passed locally | both roots validate; root Mock tests 23/23 and State Mock tests 3/3 |
 | Terraform live plan/apply | not run | no named/approved live environment inputs |
 | AWS resources | not created or changed | all validation was local/mock-only |
 | Packer/AMI build | not run | out of this task's execution scope |
-| GitHub workflow | not created or run | design only |
+| GitHub workflow | not created or run | ownership/activation contract documented; real delivery decisions and external repositories block executable workflows |
 
 ## Development Entries
 
@@ -514,6 +514,143 @@ Execution boundary:
 - database migration and GitHub workflow: not created or run;
 - AWS credentials/API: not used;
 - AWS resources and real Terraform State: not created.
+
+### 2026-07-28 — Implement local PR16–20 compute and scaling structure
+
+Scope:
+
+- preserved the user-selected `pr16_20` branch and made no branch, staging, commit, push, or PR
+  operation;
+- added the Backend Launch Template, private two-subnet ASG, target group, internet-facing ALB,
+  HTTPS listener, redirect-only HTTP listener, public Route53 alias, and release-preference output;
+- added Working V0 as exactly one private `aws_instance` with encrypted root/cache EBS, IMDSv2,
+  dedicated runtime profile/SG, and private Route53 A record;
+- added the Training hardened Launch Template, On-Demand-only private ASG, termination lifecycle
+  hook, direct own-ASG lifecycle/protection IAM, and SQS backlog-per-InService scaling alarms;
+- changed Backend/Training release IAM and Training lifecycle IAM from future constructed ARNs to
+  direct Terraform resource references;
+- added semantic component files and separate Backend/Working/Training runtime templates; no
+  numbered or history-based Terraform filenames were introduced.
+
+Runtime and ownership boundary:
+
+- Backend and Training ASGs consume LT `$Default`; both LTs keep
+  `update_default_version = false`, ignore only release-owned `image_id`, and leave structural
+  fields visible to Terraform;
+- Terraform has no automatic Backend `instance_refresh` block. Reviewed preferences are an output
+  for the future Backend release workflow; no refresh is started by local validation;
+- Working still has no Launch Template, ASG, target group, ALB, public IP, or SSH configuration;
+- Training has no Mixed Instances Policy, Spot capacity, public listener, or routine Instance
+  Refresh;
+- Training ignores only autoscaling-owned `desired_capacity` drift; Terraform continues to own
+  min/max and every other ASG structural field;
+- scale-from-zero metric math uses visible queue messages directly when InService worker count is
+  zero; all periods, thresholds, adjustments, cooldowns, warmup, and lifecycle results are
+  required inputs rather than deployment defaults;
+- runtime templates write only non-secret identifiers and configuration. Database/callback/API-key
+  values remain runtime-resolved from their secret ARNs.
+
+Mock and external blockers:
+
+- Account ID `123456789012`, fake AMIs/domain/certificate/commit/digest, instance types, sizes,
+  health values, lifecycle values, and scaling thresholds exist only in `.tftest.hcl`;
+- real Backend/Working/Training AMIs, systemd units, health paths, runtime consumption, GPU sizes,
+  certificate/domain, and measured scaling inputs remain unverified;
+- Backend/Training message, callback and control alignment (EXT-01), Training protection/hook
+  completion evidence (EXT-02), release ownership governance (EXT-03), and Working/Training AMI
+  evidence (EXT-04) remain blockers;
+- the Backend numeric-LT-version document and GPU Terraform-sole-writer document still conflict
+  with the approved `$Default` field ownership. No release workflow/role activation is claimed.
+
+Security-scan exception:
+
+- Trivy `AVD-AWS-0053` is suppressed only on `aws_lb.backend`, because the confirmed topology
+  requires one internet-facing Backend ALB;
+- the ALB forwards only through its SG to the private Backend target group; Working, Training,
+  RDS, and application EC2 remain private;
+- the existing three `AVD-AWS-0104` ignores remain limited to the documented TCP `443` NAT egress
+  rules.
+
+Command evidence:
+
+- root `terraform validate -no-color` -> exit `0`;
+- root `terraform test -no-color` -> exit `0`, 22 passed, 0 failed;
+- `terraform fmt -check -recursive` -> exit `0`;
+- `tflint --format compact` -> exit `0`, no issues;
+- `trivy config --config trivy.yaml .` -> exit `0`, zero unsuppressed HIGH/CRITICAL
+  misconfigurations and exactly four documented ignores (three TCP `443` NAT egress rules and the
+  sole public Backend ALB);
+- `git diff --check` -> exit `0`;
+- live `terraform plan`, drift tests, AMI validation, runtime smoke, callback test, scale-from-zero
+  test, and lifecycle test: not run.
+
+Execution boundary:
+
+- live `terraform plan` / `terraform apply`: not run;
+- Instance Refresh, GitHub workflow, Packer, lifecycle action, and scaling action: not run;
+- AWS credentials/API: not used;
+- AWS resources and real Terraform State: not created.
+
+### 2026-07-28 — Implement local PR21–28 Terraform-owned boundary
+
+Scope:
+
+- added required, validated observability inputs without live-environment defaults;
+- added a rotating Terraform-managed CloudWatch Logs KMS key, encrypted Backend/Working/Training
+  log groups, encrypted VPC Flow Log group, least-privilege Flow Log role/policy and VPC Flow Log;
+- changed runtime log IAM from external/mock log ARNs to direct Terraform log-group references;
+- added direct-resource SQS depth/age/DLQ, Backend ALB/capacity, Working EC2, RDS and NAT alarms;
+- enabled Backend/Training ASG capacity metrics used by scaling, alarms and the shared dashboard;
+- added the shared ALB/SQS/ASG/RDS/Working/NAT dashboard, monthly Budget and Cost Anomaly monitor;
+- added the required `Deployment` tag used by the scoped Budget filter;
+- added Mock assertions for log-key rotation, retention, flow scope, queue/capacity alarms,
+  ASG metrics and dashboard naming, plus an invalid-retention case;
+- documented SSM/no-SSH access, single-NAT outage, future two-NAT upgrade/rollback, retention and
+  deletion safety in `OPERATIONS_RUNBOOK.md`;
+- documented Backend saved-plan review and Working replacement/DNS/downtime/rollback evidence in
+  `SERVICE_VALIDATION_RUNBOOK.md`;
+- documented repository ownership, direct-resource reference rules, Working plan/apply gates,
+  concurrency/stale-default/rollback rules and static/live drift cases in
+  `RELEASE_WORKFLOW_CONTRACT.md`.
+
+Ownership and incomplete service metrics:
+
+- PR24 Backend workflow remains owned by `small_backend`; PR25 Training workflow remains owned by
+  `gpu_ec2`; neither external repository was changed;
+- no executable Working deploy workflow was invented because `DEC-012` lacks the real GitHub
+  Environment approval rule, backend-config delivery, complete variable delivery and protected
+  saved-plan policy;
+- Terraform implements infrastructure-native metrics only. GPU, disk, process, request, lifecycle,
+  callback and job-result metrics remain consumer-runtime responsibilities and are explicitly
+  recorded as partial rather than fabricated;
+- alarm action ARNs and cost email recipients are required external inputs because this root does
+  not own the notification topic/recipients; their test values remain Mock-only;
+- same-root KMS, S3, SQS, RDS, LT, ASG and Log Group identifiers are direct Terraform resource
+  references. Hand-written identifiers remain only for external secrets/topics/certificates/zones
+  and tests.
+
+Command evidence:
+
+- `terraform validate -no-color` -> exit `0`;
+- `terraform test -no-color` -> exit `0`, 23 passed, 0 failed with `mock_provider "aws"`;
+- `terraform fmt -check -recursive` -> exit `0`;
+- `tflint --format compact` -> exit `0`, no issues;
+- `trivy config --config trivy.yaml .` -> exit `0`, zero unsuppressed HIGH/CRITICAL
+  misconfigurations and exactly four documented ignores (three TCP `443` NAT egress rules and the
+  sole public Backend ALB);
+- `git diff --check` -> exit `0`;
+- local provider/TFLint processes required execution outside the filesystem sandbox; no AWS
+  credentials or AWS API were used.
+
+Execution boundary:
+
+- live State bootstrap/migration and live `terraform plan` / `terraform apply`: not run;
+- GitHub workflow dispatch/mutation, Packer, LT promotion, Instance Refresh, scaling, lifecycle
+  completion, Working replacement and DNS propagation test: not run;
+- PR29/30 cannot begin without the real Account ID, region, environment, backend values, complete
+  owner-approved Terraform inputs, credentials and explicit authorization;
+- AWS resources and real Terraform State: not created or changed;
+- branch remained `pr16_20`; no branch, staging, commit, push or PR operation was performed.
 
 ## Evidence Rules
 

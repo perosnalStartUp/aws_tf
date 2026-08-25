@@ -124,7 +124,7 @@ flowchart LR
 | NET-010 | Implement the S3 Gateway Endpoint and associate it with both private application route tables. | NET-008 | **Completed locally 2026-07-28**: Gateway Endpoint attaches both application route tables and policy requires approved bucket ARNs. |
 | NET-011 | Implement Route53 private hosted zone association for the VPC. | NET-002, DEC-007 | **Completed locally 2026-07-28**: private zone uses a required name and direct `aws_vpc.main.id` association; real name remains required. |
 | NET-012 | Add network outputs: VPC ID, subnet IDs by class/AZ, route table IDs, NAT EIP, and private zone ID. | NET-003 through NET-011 | **Completed locally 2026-07-28**: semantic outputs expose only resource-derived identifiers/EIP and no secrets. |
-| NET-013 | Add VPC Flow Logs destination/role after retention and destination are decided. | DEC-009, NET-002 | Flow logs are enabled without exposing application secrets. |
+| NET-013 | Add VPC Flow Logs destination/role after retention and destination are decided. | DEC-009, NET-002 | **Implemented locally 2026-07-28** with a dedicated least-privilege role and Terraform-managed encrypted log group; real retention/traffic scope remain required inputs. |
 
 ## 8. Security Groups and IAM Foundation
 
@@ -155,7 +155,7 @@ flowchart LR
 | DATA-004 | Implement only approved lifecycle/retention rules for datasets, logs, checkpoints, and adapters. | DEC-009, DATA-002 | **Completed locally 2026-07-28 with no lifecycle rules**: no retention value was invented; durable data is not expired. |
 | DATA-005 | Implement KMS-encrypted Training queue and DLQ. | DEC-008, DEC-009, DATA-001 | **Completed locally 2026-07-28**: queue and DLQ directly reference a dedicated Terraform-managed rotating KMS key; non-secret outputs exist. |
 | DATA-006 | Implement redrive, visibility, retention, long polling, receive count, and queue policy from the runtime contract. | DATA-005 | **Completed locally 2026-07-28** with required inputs and a visibility-at-least-two-renewals check. |
-| DATA-007 | Add SQS/DLQ alarms for visible age/count and dead-letter arrival. | DATA-005, OBS-001 | Alarm thresholds/destinations are owner-approved. |
+| DATA-007 | Add SQS/DLQ alarms for visible age/count and dead-letter arrival. | DATA-005, OBS-001 | **Structurally implemented locally 2026-07-28** with direct queue dimensions and required thresholds/action ARNs; Mock values are not owner approval. |
 | RDS-001 | Implement private DB subnet group across the two DB subnets. | NET-005 | **Completed locally 2026-07-28** with direct references to both private database subnets. |
 | RDS-002 | Implement encrypted PostgreSQL RDS configuration from the approved engine/class/storage/backup decisions. | DEC-010, DATA-001, RDS-001, SG-006 | **Completed locally 2026-07-28** with private access, direct KMS/SG references, required backup/deletion inputs, and `prevent_destroy`. |
 | RDS-003 | Implement parameter/option/log export/monitoring settings required by the Backend. | DEC-010, RDS-002 | **Completed locally 2026-07-28** as required engine/family/log/monitoring inputs; real values remain deployment decisions. |
@@ -166,27 +166,27 @@ flowchart LR
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| BE-001 | Freeze Backend runtime inputs: exact AMI, port, health path, instance type, min/max, desired=1, warmup and refresh values. | DEC-005, DEC-006 | Inputs are recorded and validated; exact AMI only. |
-| BE-002 | Define non-secret Backend user data/runtime environment identifiers for RDS, S3, SQS, Working DNS, logs, and environment. | BE-001, RDS-004, DATA-002, DATA-005, NET-011 | No password/token/secret value enters user data or state. |
-| BE-003 | Implement Backend Launch Template structure: exact bootstrap AMI, instance profile, SG, IMDSv2, encrypted EBS, user data and tags. | BE-002, IAM-002, SG-003 | `update_default_version = false`; structural fields remain Terraform-owned. |
-| BE-004 | Implement target group, health checks, deregistration delay, and Backend ASG across both private application subnets. | BE-003, NET-004 | Initial `desired = 1`; min/max validation; target group attachment works in plan. |
-| BE-005 | Implement internet-facing ALB across both public subnets with ALB SG. | DEC-005, NET-003, SG-002 | ALB is the only public application entry point. |
-| BE-006 | Implement HTTPS listener/certificate and optional HTTP-to-HTTPS redirect; add public DNS record. | DEC-005, BE-005 | TLS/domain ownership is explicit; no plaintext application listener remains. |
-| BE-007 | Configure ASG to consume LT `$Default` and define safe Instance Refresh preferences. | BE-004 | Terraform does not reset workflow-owned AMI/default; health gates are explicit. |
-| BE-008 | Add Backend/ALB alarms and logs for target health, 5xx, latency, instance status, ASG capacity and refresh failures. | BE-004, BE-005, OBS-001 | Alarms have destinations and tested dimensions. |
+| BE-001 | Freeze Backend runtime inputs: exact AMI, port, health path, instance type, min/max, desired=1, warmup and refresh values. | DEC-005, DEC-006 | **Input contract implemented locally 2026-07-28** with required validated values and Mock-only fixtures; real values/artifact remain pending. |
+| BE-002 | Define non-secret Backend user data/runtime environment identifiers for RDS, S3, SQS, Working DNS, logs, and environment. | BE-001, RDS-004, DATA-002, DATA-005, NET-011 | **Implemented locally 2026-07-28** with direct resource identifiers and secret ARNs only; real Backend AMI consumption remains unverified. |
+| BE-003 | Implement Backend Launch Template structure: exact bootstrap AMI, instance profile, SG, IMDSv2, encrypted EBS, user data and tags. | BE-002, IAM-002, SG-003 | **Implemented locally 2026-07-28** with `update_default_version = false`, AMI-only ignore, IMDSv2, encrypted EBS and direct profile/SG references. |
+| BE-004 | Implement target group, health checks, deregistration delay, and Backend ASG across both private application subnets. | BE-003, NET-004 | **Implemented locally 2026-07-28** with desired one, two private subnets, ELB health, target attachment and `$Default`; no live plan. |
+| BE-005 | Implement internet-facing ALB across both public subnets with ALB SG. | DEC-005, NET-003, SG-002 | **Implemented locally 2026-07-28** as the only public application resource with an exact documented Trivy exception. |
+| BE-006 | Implement HTTPS listener/certificate and optional HTTP-to-HTTPS redirect; add public DNS record. | DEC-005, BE-005 | **Implemented locally 2026-07-28** with required external ACM/zone inputs and redirect-only HTTP; real TLS/domain unverified. |
+| BE-007 | Configure ASG to consume LT `$Default` and define safe Instance Refresh preferences. | BE-004 | **Implemented locally 2026-07-28**: ASG consumes `$Default`; preferences are validated output only and Terraform starts no refresh. Governance/live drift tests remain pending. |
+| BE-008 | Add Backend/ALB alarms and logs for target health, 5xx, latency, instance status, ASG capacity and refresh failures. | BE-004, BE-005, OBS-001 | **Partially implemented locally 2026-07-28**: encrypted Backend logs plus ALB target-health/5xx/latency alarms use direct dimensions; app/refresh outcome metrics require runtime/workflow emission. |
 | BE-009 | Validate the one-time migration path before Backend rollout. | RDS-005, BE-007 | Migration does not race from multiple ASG instances. |
-| BE-010 | Perform local Backend plan review for public exposure, replacement, LT lifecycle, desired=1, RDS access and outputs. | BE-001 through BE-009, VAL-001 | Saved plan only after live-plan authorization; review checklist recorded. |
+| BE-010 | Perform local Backend plan review for public exposure, replacement, LT lifecycle, desired=1, RDS access and outputs. | BE-001 through BE-009, VAL-001 | **Static checklist completed locally 2026-07-28** in `SERVICE_VALIDATION_RUNBOOK.md`; saved-plan evidence requires live-plan authorization. |
 
 ## 11. GPU Working V0
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| WK-001 | Resolve Working host packaging/AMI blocker and freeze exact AMI, GPU type, port, disk/cache, auth, subnet/AZ and DNS inputs. | DEC-007, GPU repository evidence | AMI/build evidence exists; no unbounded AMI lookup. |
-| WK-002 | Define non-secret Working runtime configuration and secret identifiers required by `INTEGRATION_CONTRACTS.md`. | WK-001, DATA-002, IAM-003 | Secret values are runtime-resolved, not in user data/state. |
-| WK-003 | Implement one private `aws_instance` with exact AMI, Working SG/profile, IMDSv2 and encrypted volumes. | WK-002, NET-004, SG-004, IAM-003 | Exactly one instance; no LT, ASG, target group, public IP or SSH. |
-| WK-004 | Implement Route53 private A record and replacement dependency behavior. | WK-003, NET-011 | Backend resolves the stable name to the current private address. |
-| WK-005 | Add Working status/GPU/disk/process/request/log alarms. | WK-003, OBS-001 | Thresholds and destinations are explicit. |
-| WK-006 | Document and test the Terraform AMI replacement/rollback sequence, including DNS update and expected downtime. | WK-004 | Nonproduction evidence records old/new instance and AMI IDs; requires apply authorization. |
+| WK-001 | Resolve Working host packaging/AMI blocker and freeze exact AMI, GPU type, port, disk/cache, auth, subnet/AZ and DNS inputs. | DEC-007, GPU repository evidence | **Terraform input surface implemented locally 2026-07-28; still blocked** because real AMI/build/TLS and measured runtime values do not exist. |
+| WK-002 | Define non-secret Working runtime configuration and secret identifiers required by `INTEGRATION_CONTRACTS.md`. | WK-001, DATA-002, IAM-003 | **Implemented locally 2026-07-28** for every named Working setting using identifiers/non-secret values; real AMI consumption unverified. |
+| WK-003 | Implement one private `aws_instance` with exact AMI, Working SG/profile, IMDSv2 and encrypted volumes. | WK-002, NET-004, SG-004, IAM-003 | **Structurally implemented locally 2026-07-28** as one private instance with encrypted root/cache volumes; no LT/ASG/TG/ALB/public IP/SSH. |
+| WK-004 | Implement Route53 private A record and replacement dependency behavior. | WK-003, NET-011 | **Implemented locally 2026-07-28** with direct private-IP reference and zone membership check; replacement/downtime unverified. |
+| WK-005 | Add Working status/GPU/disk/process/request/log alarms. | WK-003, OBS-001 | **Partially implemented locally 2026-07-28**: encrypted Working logs and EC2 status alarm exist; GPU/disk/process/request metrics require runtime emission. |
+| WK-006 | Document and test the Terraform AMI replacement/rollback sequence, including DNS update and expected downtime. | WK-004 | **Procedure documented locally 2026-07-28** in `SERVICE_VALIDATION_RUNBOOK.md`; replacement/DNS/downtime evidence requires authorized nonproduction apply. |
 | WK-007 | Verify Backend-to-Working SG/DNS/application path and deny public/Training access. | WK-004, BE-004 | **Requires deployed nonproduction environment**; connectivity/denial evidence recorded. |
 
 ## 12. GPU Training ASG and SQS Scaling
@@ -195,29 +195,29 @@ flowchart LR
 | --- | --- | --- | --- |
 | TR-001 | Align Backend message schema, model identity, callback auth/body, exact replay, and job-control endpoint with Training. | cross-repository blocker | Backend and GPU design/tests agree; otherwise remaining Training deployment tasks stay blocked. |
 | TR-002 | Implement and test Training scale-in protection plus termination lifecycle-hook completion path in the runtime. | cross-repository blocker | Runtime evidence covers success, failure, retry, timeout and shutdown. |
-| TR-003 | Produce/verify exact Training AMI and freeze GPU type, min/desired/max, job duration, queue visibility/renewal and callback inputs. | DEC-008, TR-001, TR-002 | Real AMI/runtime evidence exists; initial capacity remains On-Demand. |
-| TR-004 | Define non-secret Training runtime configuration and callback secret ARN/field. | TR-003, DATA-005, IAM-004 | All names in `INTEGRATION_CONTRACTS.md` are supplied without secret values. |
-| TR-005 | Implement Training Launch Template with exact bootstrap AMI, role, SG, IMDSv2, encrypted EBS, user data and tags. | TR-004, NET-004, SG-005, IAM-004 | `update_default_version = false`; no public IP/listener. |
-| TR-006 | Implement Training ASG across private application subnets with On-Demand instances and confirmed min/desired/max. | TR-005 | ASG consumes `$Default`; no routine Instance Refresh. |
-| TR-007 | Implement termination lifecycle hook, heartbeat timeout, default result, notification/event path, and runtime permissions. | TR-002, TR-006 | Terraform and runtime completion action names/timeouts agree. |
-| TR-008 | Implement scale-in protection permissions and document the exact set/remove boundaries. | TR-002, IAM-004, TR-006 | Active jobs are protected; idle/completed workers can terminate. |
-| TR-009 | Implement SQS backlog-per-InService-instance metric math and scaling policy, including scale-from-zero behavior. | DATA-006, TR-006 | Scaling thresholds derive from acceptable latency/job throughput, not arbitrary defaults. |
-| TR-010 | Configure `TRAINING_BACKEND_BASE_URL` to the public Backend domain and validate the NAT callback route. | BE-006, NET-008, TR-004 | HTTPS callback succeeds through NAT/ALB; Training remains unreachable inbound. |
-| TR-011 | Add Training alarms/logging for queue age/DLQ, ASG capacity, lifecycle timeout, GPU/disk, callback failure and job outcome. | TR-006 through TR-010, OBS-001 | Alarm dimensions/actions are correct and no secret is logged. |
+| TR-003 | Produce/verify exact Training AMI and freeze GPU type, min/desired/max, job duration, queue visibility/renewal and callback inputs. | DEC-008, TR-001, TR-002 | **Terraform input surface implemented locally 2026-07-28; still blocked** on real AMI/runtime and EXT-01/02 evidence. |
+| TR-004 | Define non-secret Training runtime configuration and callback secret ARN/field. | TR-003, DATA-005, IAM-004 | **Implemented locally 2026-07-28** for every named Training setting with no secret value in user data. |
+| TR-005 | Implement Training Launch Template with exact bootstrap AMI, role, SG, IMDSv2, encrypted EBS, user data and tags. | TR-004, NET-004, SG-005, IAM-004 | **Structurally implemented locally 2026-07-28** with `$Default` ownership boundary, encrypted volumes, IMDSv2 and no listener/public IP. |
+| TR-006 | Implement Training ASG across private application subnets with On-Demand instances and confirmed min/desired/max. | TR-005 | **Structurally implemented locally 2026-07-28** across both private subnets with min/desired zero, On-Demand-only capacity and no refresh. |
+| TR-007 | Implement termination lifecycle hook, heartbeat timeout, default result, notification/event path, and runtime permissions. | TR-002, TR-006 | **Partially implemented locally 2026-07-28**: hook/timeouts/result and direct ASG IAM exist; runtime completion/event evidence remains blocked on EXT-02. |
+| TR-008 | Implement scale-in protection permissions and document the exact set/remove boundaries. | TR-002, IAM-004, TR-006 | **IAM/structure implemented locally 2026-07-28** with direct own-ASG scope; actual protection behavior remains blocked on EXT-02. |
+| TR-009 | Implement SQS backlog-per-InService-instance metric math and scaling policy, including scale-from-zero behavior. | DATA-006, TR-006 | **Structurally implemented locally 2026-07-28** with explicit zero-worker expression and required evidence-derived thresholds; real scaling unverified. |
+| TR-010 | Configure `TRAINING_BACKEND_BASE_URL` to the public Backend domain and validate the NAT callback route. | BE-006, NET-008, TR-004 | **Configuration implemented locally 2026-07-28** from the direct Backend DNS resource; callback contract/NAT path remains unverified and blocked on EXT-01. |
+| TR-011 | Add Training alarms/logging for queue age/DLQ, ASG capacity, lifecycle timeout, GPU/disk, callback failure and job outcome. | TR-006 through TR-010, OBS-001 | **Partially implemented locally 2026-07-28**: encrypted Training logs, queue/DLQ alarms and capacity dashboard exist; lifecycle/GPU/disk/callback/job metrics require runtime emission. |
 | TR-012 | Validate that `$Default` promotion affects new scale-outs without terminating protected mixed-version workers. | TR-006, RELEASE-004 | Requires nonproduction release authorization and recorded instance AMI/LT/lifecycle evidence. |
 
 ## 13. Observability, Cost, and Operations
 
 | ID | Task description | Depends on | Completion evidence |
 | --- | --- | --- | --- |
-| OBS-001 | Decide notification destinations, log retention, alarm severity conventions, dashboard scope and budget thresholds. | DEC-009 | Values and ownership are recorded. |
-| OBS-002 | Implement component log groups with encryption/retention and explicit names. | OBS-001, DATA-001 | Runtime roles can write only their own approved logs. |
-| OBS-003 | Implement shared CloudWatch dashboard for ALB/Backend, RDS, Working, Training, SQS/DLQ and NAT. | service alarms | Dashboard references real resource dimensions. |
-| OBS-004 | Implement NAT health/traffic/error alarms and cost visibility for the accepted single-NAT design. | NET-007, OBS-001 | NAT failure and unexpected data processing are observable. |
-| OBS-005 | Implement AWS Budget/Cost Anomaly alerts after account recipients/thresholds are approved. | DEC-001, OBS-001 | Alert recipients and thresholds are not placeholders. |
-| OPS-001 | Write SSM access runbook with IAM session control and no inbound SSH. | IAM runtime roles | Operators can identify the command path and audit location. |
-| OPS-002 | Write single-NAT outage behavior and future two-NAT upgrade/rollback runbook. | NET-007 | Expected S3-versus-public API behavior is documented. |
-| OPS-003 | Write resource deletion/retention runbook for RDS, S3, AMIs, snapshots, logs and state. | data decisions | No destructive operation is presented as automatic. |
+| OBS-001 | Decide notification destinations, log retention, alarm severity conventions, dashboard scope and budget thresholds. | DEC-009 | **Input contract implemented locally 2026-07-28** with no defaults; real recipients, retention, thresholds and owner approval remain required. |
+| OBS-002 | Implement component log groups with encryption/retention and explicit names. | OBS-001, DATA-001 | **Implemented locally 2026-07-28** with a rotating Terraform-managed KMS key, direct references and component-scoped runtime write IAM. |
+| OBS-003 | Implement shared CloudWatch dashboard for ALB/Backend, RDS, Working, Training, SQS/DLQ and NAT. | service alarms | **Implemented locally 2026-07-28** with dimensions derived from Terraform resources; real metric population remains unverified. |
+| OBS-004 | Implement NAT health/traffic/error alarms and cost visibility for the accepted single-NAT design. | NET-007, OBS-001 | **Implemented locally 2026-07-28** with NAT error/drop alarms and traffic dashboard; real alert behavior remains unverified. |
+| OBS-005 | Implement AWS Budget/Cost Anomaly alerts after account recipients/thresholds are approved. | DEC-001, OBS-001 | **Structurally implemented locally 2026-07-28** with required recipient/threshold inputs; real values and AWS delivery remain unverified. |
+| OPS-001 | Write SSM access runbook with IAM session control and no inbound SSH. | IAM runtime roles | **Documented locally 2026-07-28** in `OPERATIONS_RUNBOOK.md`; operator/audit destination and live session evidence remain pending. |
+| OPS-002 | Write single-NAT outage behavior and future two-NAT upgrade/rollback runbook. | NET-007 | **Documented locally 2026-07-28** including S3 endpoint limitations and route-first rollback; no route was changed. |
+| OPS-003 | Write resource deletion/retention runbook for RDS, S3, AMIs, snapshots, logs and state. | data decisions | **Documented locally 2026-07-28** with explicit approvals/evidence and no destructive command. |
 
 ## 14. AMI Build and Release Integration
 
@@ -227,10 +227,10 @@ flowchart LR
 | RELEASE-002 | Standardize Packer manifest output: exact AMI ID, account/region, component, commit, build run, architecture, container digest and checks actually run. | component build repositories | Release consumes the manifest, not an AMI name search. |
 | RELEASE-003 | Implement Backend OIDC release workflow: lock, validate AMI, clone `$Default`, ImageId-only diff, promote, refresh, verify and rollback. | IAM-005, IAM-006, BE-007, RELEASE-002 | Nonproduction evidence verifies actual instance AMI/LT/ALB health. |
 | RELEASE-004 | Implement Training OIDC release workflow: lock, validate AMI, clone `$Default`, ImageId-only diff, promote, verify new launches, no forced refresh. | IAM-005, IAM-006, TR-006, RELEASE-002 | Protected jobs remain; mixed-version draining is observable. |
-| RELEASE-005 | Implement Working release workflow as an approved Terraform AMI input update/plan/apply path; prohibit LT/ASG API calls. | WK-006, DEC-012 | Replacement and DNS evidence are captured. |
-| RELEASE-006 | Add per-component/environment GitHub concurrency controls and stale-default compare-before-promote guard. | RELEASE-003 through RELEASE-005 | Concurrent releases cannot silently overwrite/restore the wrong default. |
-| RELEASE-007 | Add rollback evidence collection for prior/new default, AMI, LT version, instance IDs, lifecycle, ALB/app health and Training job state. | RELEASE-003, RELEASE-004 | Pointer rollback is not claimed as fleet rollback without instance evidence. |
-| RELEASE-008 | Test Terraform drift cases: no release, AMI-only external release, structural drift, and structural update after a prior AMI release. | RELEASE-003, RELEASE-004 | Plan preserves workflow AMI/default ownership and detects unrelated structural drift. |
+| RELEASE-005 | Implement Working release workflow as an approved Terraform AMI input update/plan/apply path; prohibit LT/ASG API calls. | WK-006, DEC-012 | **Execution contract documented locally 2026-07-28**; workflow file is blocked on DEC-012 real environment/backend/variable/plan-artifact policy. |
+| RELEASE-006 | Add per-component/environment GitHub concurrency controls and stale-default compare-before-promote guard. | RELEASE-003 through RELEASE-005 | **Static contract documented locally 2026-07-28**; executable controls belong in the owning workflows and remain blocked. |
+| RELEASE-007 | Add rollback evidence collection for prior/new default, AMI, LT version, instance IDs, lifecycle, ALB/app health and Training job state. | RELEASE-003, RELEASE-004 | **Evidence schema documented locally 2026-07-28**; no rollback was run. |
+| RELEASE-008 | Test Terraform drift cases: no release, AMI-only external release, structural drift, and structural update after a prior AMI release. | RELEASE-003, RELEASE-004 | **Static/live test matrix documented locally 2026-07-28**; actual drift cases require external workflows and authorized nonproduction AWS. |
 
 ## 15. Validation and Deployment Gates
 

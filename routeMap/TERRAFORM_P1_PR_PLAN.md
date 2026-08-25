@@ -80,19 +80,19 @@ resolved, but it must not merge production-shaped placeholders as if they were a
 | 13 | `iam-build-release-roles` | IAM policy verification and release-role boundary | `IAM-006`, `IAM-007` | DP-09; `iam-deploy-oidc`, `iam-runtime-roles`; EXT-03 | structural roles implemented locally; activation blocked on EXT-03 |
 | 14 | `database-rds` | Private PostgreSQL RDS | `RDS-001` through `RDS-004` | DP-08; `security-groups`, `data-kms-s3` | implemented locally with required deployment inputs |
 | 15 | `database-migration-runner` | One-time Backend migration release boundary | `RDS-005`, `BE-009` | DP-08; Backend execution owner confirmed; `database-rds` | runbook/gate defined; executable runner blocked on owner |
-| 16 | `compute-backend-core` | Backend LT, target group, ASG, and ALB | `BE-001` through `BE-005` | DP-04; network/data/IAM prerequisites | blocked on decisions/artifact |
-| 17 | `edge-backend-https` | Backend HTTPS/DNS and `$Default` relationship | `BE-006`, `BE-007` | DP-04; `compute-backend-core` | blocked on decisions |
-| 18 | `compute-working-v0` | Working V0 single EC2 and private record | `WK-001` through `WK-004` | DP-05; exact Working AMI; network/security/runtime-IAM prerequisites | blocked on artifact/decisions |
-| 19 | `compute-training-asg` | Training LT, ASG, lifecycle and protection | `TR-003` through `TR-008` | DP-06; EXT-01, EXT-02; network/messaging/runtime-IAM prerequisites | blocked on runtime/artifact |
-| 20 | `scaling-training-callback` | Training SQS scaling and Backend callback route | `TR-009`, `TR-010` | `messaging-training-sqs`, `edge-backend-https`, `compute-training-asg` | blocked on compute |
-| 21 | `observability-foundation` | Log groups, queue/flow-log observability foundation | `OBS-001`, `OBS-002`, `NET-013`, `DATA-007` | DP-07; network/data/messaging prerequisites | blocked on decisions |
-| 22 | `observability-services-cost` | Service dashboards, alarms, budgets | `BE-008`, `WK-005`, `TR-011`, `OBS-003` through `OBS-005` | service compute/scaling and `observability-foundation` | planned |
-| 23 | `operations-runbooks` | Operations and deletion/retention runbooks | `OPS-001` through `OPS-003` | network/data/runtime-IAM/database prerequisites | planned |
+| 16 | `compute-backend-core` | Backend LT, target group, ASG, and ALB | `BE-001` through `BE-005` | DP-04; network/data/IAM prerequisites | implemented locally with required Mock-only inputs; real artifact/runtime pending |
+| 17 | `edge-backend-https` | Backend HTTPS/DNS and `$Default` relationship | `BE-006`, `BE-007` | DP-04; `compute-backend-core` | implemented locally; real domain/certificate and release governance pending |
+| 18 | `compute-working-v0` | Working V0 single EC2 and private record | `WK-001` through `WK-004` | DP-05; exact Working AMI; network/security/runtime-IAM prerequisites | structural implementation local; real AMI/TLS/runtime verification blocked |
+| 19 | `compute-training-asg` | Training LT, ASG, lifecycle and protection | `TR-003` through `TR-008` | DP-06; EXT-01, EXT-02; network/messaging/runtime-IAM prerequisites | structural implementation local; EXT-01/02/04 still block deployment |
+| 20 | `scaling-training-callback` | Training SQS scaling and Backend callback route | `TR-009`, `TR-010` | `messaging-training-sqs`, `edge-backend-https`, `compute-training-asg` | metric/callback structure local; thresholds and path remain unverified |
+| 21 | `observability-foundation` | Log groups, queue/flow-log observability foundation | `OBS-001`, `OBS-002`, `NET-013`, `DATA-007` | DP-07; network/data/messaging prerequisites | structurally implemented locally; real owner values pending |
+| 22 | `observability-services-cost` | Service dashboards, alarms, budgets | `BE-008`, `WK-005`, `TR-011`, `OBS-003` through `OBS-005` | service compute/scaling and `observability-foundation` | infrastructure metrics implemented locally; application metrics pending |
+| 23 | `operations-runbooks` | Operations and deletion/retention runbooks | `OPS-001` through `OPS-003` | network/data/runtime-IAM/database prerequisites | documented locally; no operation run |
 | 24 | `workflow-backend-release` | Backend AMI release workflow | `RELEASE-002`, `RELEASE-003` | DP-09; EXT-03; release IAM and Backend edge | blocked on artifact/governance |
 | 25 | `workflow-training-release` | Training AMI release workflow | `RELEASE-004` | DP-09; EXT-03; release IAM and Training ASG | blocked on artifact/governance |
-| 26 | `workflow-working-release` | Working Terraform release workflow | `RELEASE-005` | DP-09; `compute-working-v0` | blocked on Working deployment |
-| 27 | `workflow-release-hardening` | Release concurrency, rollback evidence, drift tests | `RELEASE-006` through `RELEASE-008` | all component release workflows | planned |
-| 28 | `validation-service-runbooks` | Service-local review and replacement runbooks | `BE-010`, `WK-006` | foundation validation, Backend edge, Working, observability | planned |
+| 26 | `workflow-working-release` | Working Terraform release workflow | `RELEASE-005` | DP-09; `compute-working-v0` | contract documented; executable workflow blocked on DEC-012 and real environment delivery |
+| 27 | `workflow-release-hardening` | Release concurrency, rollback evidence, drift tests | `RELEASE-006` through `RELEASE-008` | all component release workflows | static/live matrix documented; execution blocked on external workflows and nonproduction |
+| 28 | `validation-service-runbooks` | Service-local review and replacement runbooks | `BE-010`, `WK-006` | foundation validation, Backend edge, Working, observability | procedures documented locally; live evidence requires PR29/30 |
 | 29 | `deployment-nonprod` | Authorized state bootstrap and nonproduction deployment | `STATE-005`, `STATE-006`, `VAL-004` through `VAL-006` | named environment and explicit authorization | requires authorization |
 | 30 | `verification-nonprod` | Nonproduction security/service/release verification | `WK-007`, `TR-012`, `VAL-007` through `VAL-009` | release hardening and nonproduction deployment; explicit authorization | requires authorization |
 

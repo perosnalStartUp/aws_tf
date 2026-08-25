@@ -1,6 +1,12 @@
 # AMI, Launch Template, and ASG Release Design
 
-Status: confirmed target ownership model; implementation not started.
+Status: confirmed target ownership model; Terraform LT/ASG structure implemented locally with
+Mock AWS, while release workflows, real artifacts, governance alignment, and live drift evidence
+remain unimplemented.
+
+`RELEASE_WORKFLOW_CONTRACT.md` records repository ownership, activation gates, the Working
+plan/apply boundary, concurrency requirements, evidence fields, and the static/live drift matrix.
+That contract does not claim an executable workflow or live AWS evidence.
 
 ## 1. Why the Ownership Is Split
 
@@ -191,3 +197,24 @@ contract.
 
 The workflow repository locations are confirmed, but the field-ownership wording conflict remains
 an implementation gate for Backend/Training release roles and workflows.
+
+## 12. Local Terraform Structure — 2026-07-28
+
+- Backend and Training Launch Templates use exact required AMI inputs, hardened metadata/encrypted
+  volumes, `update_default_version = false`, and `ignore_changes = [image_id]`.
+- Both ASGs reference LT version `$Default`.
+- Terraform does not configure an automatic `instance_refresh` block. Backend refresh preferences
+  are validated inputs/outputs for the future release workflow, so a Terraform apply does not
+  start a refresh.
+- Backend release IAM now references `aws_launch_template.backend.arn` and
+  `aws_autoscaling_group.backend.arn`; Training release IAM directly references its LT and has no
+  refresh/termination authority.
+- Training has no routine Instance Refresh. Its termination lifecycle hook and worker
+  `SetInstanceProtection` permissions are structurally present, but runtime behavior is not
+  verified.
+- Training ASG ignores only runtime `desired_capacity` drift because CloudWatch scaling owns that
+  mutable value; min/max, subnets, LT relationship, tags, and all other ASG structure remain
+  Terraform-owned.
+- The implementation has only Mock/static evidence. The external numeric-version Backend contract
+  and GPU Terraform-sole-writer wording still conflict with `$Default`; no release role/workflow
+  may be activated until governance is synchronized.

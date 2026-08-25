@@ -103,7 +103,13 @@ resource "aws_iam_role_policy" "training_integrations" {
           "autoscaling:RecordLifecycleActionHeartbeat",
           "autoscaling:SetInstanceProtection",
         ]
-        Resource = "arn:aws:autoscaling:${var.aws_region}:${var.aws_account_id}:autoScalingGroup:*:autoScalingGroupName/${var.training_asg_name}"
+        Resource = aws_autoscaling_group.training.arn
+      },
+      {
+        Sid      = "DiscoverOwnAutoScalingMembership"
+        Effect   = "Allow"
+        Action   = ["autoscaling:DescribeAutoScalingInstances"]
+        Resource = "*"
       },
     ]
   })
@@ -123,7 +129,7 @@ resource "aws_iam_role_policy" "runtime_logging" {
         "logs:DescribeLogStreams",
         "logs:PutLogEvents",
       ]
-      Resource = sort(tolist(var.runtime_log_group_arns[each.key]))
+      Resource = "${aws_cloudwatch_log_group.runtime[each.key].arn}:*"
     }]
   })
 }
